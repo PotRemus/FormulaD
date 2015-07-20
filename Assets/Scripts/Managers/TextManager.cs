@@ -18,7 +18,11 @@ namespace FormuleD.Managers
         // Use this for initialization
         void Start()
         {
-            _text.text = ResourceEngine.Instance.GetResource(resourceKey);
+            try
+            {
+                _text.text = ResourceEngine.Instance.GetResource(resourceKey);
+            }
+            catch { }
         }
 
         public void UpdateResource(string key)
