@@ -20,17 +20,7 @@ namespace FormuleD.Engines
             Instance = this;
         }
 
-        public void SaveGame()
-        {
-
-        }
-
-        public void LoadGame(GameSettings game)
-        {
-            
-        }
-
-        public List<GameSettings> GameCandidate()
+        public List<GameSettings> CandidateGames()
         {
             List<GameSettings> result = new List<GameSettings>();
             foreach (var game in ContextEngine.Instance.GetGameContexts())

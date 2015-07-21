@@ -30,15 +30,41 @@ namespace FormuleD.Engines
             {
                 foreach (var filePath in Directory.GetFiles(_gameDirectory))
                 {
-                    using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    if (!filePath.EndsWith(".meta"))
                     {
-                        XmlSerializer serializer = new XmlSerializer(typeof(GameContext));
-                        var gameContext = (GameContext)serializer.Deserialize(fileStream);
-                        result.Add(gameContext);
+                        using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        {
+                            XmlSerializer serializer = new XmlSerializer(typeof(GameContext));
+                            var gameContext = (GameContext)serializer.Deserialize(fileStream);
+                            result.Add(gameContext);
+                        }
                     }
                 }
             }
             return result;
+        }
+
+        public void SaveContext()
+        {
+            var filePath = Path.Combine(_gameDirectory, gameContext.id);
+            using (FileStream fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Write))
+            {
+                XmlSerializer serializer = new XmlSerializer(typeof(GameContext));
+                serializer.Serialize(fileStream, gameContext);
+            }
+        }
+
+        public void LoadContext(string id)
+        {
+            var filePath = Path.Combine(_gameDirectory, id);
+            if (File.Exists(filePath))
+            {
+                using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    XmlSerializer serializer = new XmlSerializer(typeof(GameContext));
+                    serializer.Serialize(fileStream, gameContext);
+                }
+            }
         }
     }
 }

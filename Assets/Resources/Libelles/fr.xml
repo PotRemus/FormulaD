@@ -3,4 +3,10 @@
   <Resource key="ButtonPlay">Lancer</Resource>
   <Resource key="ButtonCancel">Annuler</Resource>
   <Resource key="Loader">Chargement...</Resource>
+  <Resource key="LauncherTitle">Formula D Online</Resource>
+  <Resource key="LauncherNewGame">Nouvelle Partie</Resource>
+  <Resource key="LauncherOnlineGame">Jeux en ligne</Resource>
+  <Resource key="LauncherWaitingOnlineGame">En attente :</Resource>
+  <Resource key="LauncherLocalGame">Jeux en local</Resource>
+  <Resource key="LauncherCompletedGame">Parties terminées</Resource>
 </Resources>

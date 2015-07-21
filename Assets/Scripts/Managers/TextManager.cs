@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine.UI;
 using FormuleD.Engines;
+using System;
 
 namespace FormuleD.Managers
 {
@@ -12,7 +13,7 @@ namespace FormuleD.Managers
         private Text _text;
         void Awak()
         {
-            _text = this.GetComponent<Text>();
+            
         }
 
         // Use this for initialization
@@ -20,9 +21,13 @@ namespace FormuleD.Managers
         {
             try
             {
+                _text = this.GetComponent<Text>();
                 _text.text = ResourceEngine.Instance.GetResource(resourceKey);
             }
-            catch { }
+            catch(Exception ex) 
+            {
+                Debug.Log("error TextManager");
+            }
         }
 
         public void UpdateResource(string key)

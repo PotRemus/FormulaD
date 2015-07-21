@@ -7,7 +7,7 @@ namespace FormuleD.Models
 {
     public class GameSettings
     {
-        public Guid id;
+        public string id;
 
         public List<string> players;
 

@@ -9,7 +9,7 @@ namespace FormuleD.Models.Contexts
     [Serializable]
     public class GameContext
     {
-        public Guid id;
+        public string id;
         public string mapName = "Map1";
         public int lap;
         public List<PlayerContext> players = new List<PlayerContext>();
