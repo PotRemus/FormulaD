@@ -78,6 +78,7 @@ GameObject:
   - 224: {fileID: 22486072}
   - 222: {fileID: 22243620}
   - 114: {fileID: 11462654}
+  - 114: {fileID: 11415504}
   m_Layer: 5
   m_Name: Player4
   m_TagString: Untagged
@@ -129,6 +130,7 @@ GameObject:
   - 224: {fileID: 22416076}
   - 222: {fileID: 22222772}
   - 114: {fileID: 11450310}
+  - 114: {fileID: 11469684}
   m_Layer: 5
   m_Name: Player5
   m_TagString: Untagged
@@ -163,6 +165,7 @@ GameObject:
   - 224: {fileID: 22468292}
   - 222: {fileID: 22289500}
   - 114: {fileID: 11492352}
+  - 114: {fileID: 11455186}
   m_Layer: 5
   m_Name: Player1
   m_TagString: Untagged
@@ -196,6 +199,7 @@ GameObject:
   - 224: {fileID: 22483084}
   - 222: {fileID: 22259512}
   - 114: {fileID: 11448868}
+  - 114: {fileID: 11412504}
   m_Layer: 5
   m_Name: Player3
   m_TagString: Untagged
@@ -230,6 +234,7 @@ GameObject:
   - 224: {fileID: 22449736}
   - 222: {fileID: 22253980}
   - 114: {fileID: 11478690}
+  - 114: {fileID: 11465360}
   m_Layer: 5
   m_Name: Player2
   m_TagString: Untagged
@@ -350,6 +355,7 @@ GameObject:
   - 222: {fileID: 22227388}
   - 114: {fileID: 11453516}
   - 114: {fileID: 11491226}
+  - 114: {fileID: 11476772}
   m_Layer: 5
   m_Name: GamePreview
   m_TagString: Untagged
@@ -430,6 +436,38 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 
+--- !u!114 &11412504
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 136416}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fdd1eebcdcb15d40836f2d3832daabc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  winnerSprite: {fileID: 21300000, guid: 180f17ccc4b98a54ea3588165ff13bb3, type: 3}
+  currentSprite: {fileID: 21300000, guid: 35a809408e8497b4aa1fa683847ce742, type: 3}
+  deadSprite: {fileID: 21300000, guid: 96fccd5cf9d48804d98546d8cc2b7577, type: 3}
+  nameText: {fileID: 11422986}
+  image: {fileID: 11422764}
+--- !u!114 &11415504
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 113914}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fdd1eebcdcb15d40836f2d3832daabc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  winnerSprite: {fileID: 21300000, guid: 180f17ccc4b98a54ea3588165ff13bb3, type: 3}
+  currentSprite: {fileID: 21300000, guid: 35a809408e8497b4aa1fa683847ce742, type: 3}
+  deadSprite: {fileID: 21300000, guid: 96fccd5cf9d48804d98546d8cc2b7577, type: 3}
+  nameText: {fileID: 11409730}
+  image: {fileID: 11425380}
 --- !u!114 &11415506
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -655,6 +693,22 @@ MonoBehaviour:
   m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 0
+--- !u!114 &11455186
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 133754}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fdd1eebcdcb15d40836f2d3832daabc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  winnerSprite: {fileID: 21300000, guid: 180f17ccc4b98a54ea3588165ff13bb3, type: 3}
+  currentSprite: {fileID: 21300000, guid: 35a809408e8497b4aa1fa683847ce742, type: 3}
+  deadSprite: {fileID: 21300000, guid: 96fccd5cf9d48804d98546d8cc2b7577, type: 3}
+  nameText: {fileID: 11406894}
+  image: {fileID: 11431420}
 --- !u!114 &11462654
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -676,6 +730,22 @@ MonoBehaviour:
   m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 0
+--- !u!114 &11465360
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 153046}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fdd1eebcdcb15d40836f2d3832daabc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  winnerSprite: {fileID: 21300000, guid: 180f17ccc4b98a54ea3588165ff13bb3, type: 3}
+  currentSprite: {fileID: 21300000, guid: 35a809408e8497b4aa1fa683847ce742, type: 3}
+  deadSprite: {fileID: 21300000, guid: 96fccd5cf9d48804d98546d8cc2b7577, type: 3}
+  nameText: {fileID: 11476926}
+  image: {fileID: 11408932}
 --- !u!114 &11466290
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -697,6 +767,22 @@ MonoBehaviour:
   m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 0
+--- !u!114 &11469684
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 130060}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fdd1eebcdcb15d40836f2d3832daabc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  winnerSprite: {fileID: 21300000, guid: 180f17ccc4b98a54ea3588165ff13bb3, type: 3}
+  currentSprite: {fileID: 21300000, guid: 35a809408e8497b4aa1fa683847ce742, type: 3}
+  deadSprite: {fileID: 21300000, guid: 96fccd5cf9d48804d98546d8cc2b7577, type: 3}
+  nameText: {fileID: 11415506}
+  image: {fileID: 11466290}
 --- !u!114 &11471912
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -723,6 +809,26 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 'dernier tour : 1 heure'
+--- !u!114 &11476772
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 199036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc6861e8ef1a5c84787bc4ba103daf63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  image: {fileID: 11478492}
+  mapTitle: {fileID: 11443164}
+  subTitle: {fileID: 11471912}
+  players:
+  - {fileID: 11455186}
+  - {fileID: 11465360}
+  - {fileID: 11412504}
+  - {fileID: 11415504}
+  - {fileID: 11469684}
 --- !u!114 &11476926
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -829,7 +935,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 11453516}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 11476772}
+        m_MethodName: OnSelectGame
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_TypeName: UnityEngine.UI.Button+ButtonClickedEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
 --- !u!114 &11492352
@@ -1334,10 +1451,10 @@ RectTransform:
   - {fileID: 22452046}
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 150}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: .5, y: 1}
 --- !u!224 &22497174
 RectTransform:

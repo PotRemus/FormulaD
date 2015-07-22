@@ -84,7 +84,7 @@ namespace FormuleD.Managers.Course.Player
 
             if (selectedDe != null)
             {
-                GameEngine.Instance.OnViewGear(selectedDe.gear, selectedDe.min, selectedDe.max);
+                RaceEngine.Instance.OnViewGear(selectedDe.gear, selectedDe.min, selectedDe.max);
             }
 
             isCancel = false;
@@ -156,14 +156,14 @@ namespace FormuleD.Managers.Course.Player
             buttonPlay.interactable = false;
             if (isCancel)
             {
-                GameEngine.Instance.OnAspiration(false);
+                RaceEngine.Instance.OnAspiration(false);
             }
             else
             {
                 var de = buttonDes.FirstOrDefault(d => d.selected);
                 if (de != null)
                 {
-                    GameEngine.Instance.OnRollDice(de.gear, de.min, de.max);
+                    RaceEngine.Instance.OnRollDice(de.gear, de.min, de.max);
                 }
             }
         }

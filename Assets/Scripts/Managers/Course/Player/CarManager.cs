@@ -94,7 +94,7 @@ namespace FormuleD.Managers.Course.Player
                         var rotation = new Quaternion(0, 0, 0, 1);
                         rotation.eulerAngles = vectorRotation;
                         this.transform.localRotation = rotation;
-                        GameEngine.Instance.OnFinishMouvement();
+                        RaceEngine.Instance.OnFinishMouvement();
                     }
                     _previousTarget = _currentTarget;
                     _currentTarget = null;
@@ -110,7 +110,7 @@ namespace FormuleD.Managers.Course.Player
 
         void OnMouseUp()
         {
-            if (!GameEngine.Instance.isHoverGUI)
+            if (!RaceEngine.Instance.isHoverGUI)
             {
                 PlayerEngine.Instance.SelectedPlayerView(_player);
             }

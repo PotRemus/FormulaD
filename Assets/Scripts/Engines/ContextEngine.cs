@@ -62,7 +62,7 @@ namespace FormuleD.Engines
                 using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     XmlSerializer serializer = new XmlSerializer(typeof(GameContext));
-                    serializer.Serialize(fileStream, gameContext);
+                    gameContext = serializer.Deserialize(fileStream) as GameContext;
                 }
             }
         }

@@ -29,7 +29,7 @@ namespace FormuleD.Managers.Course
 
         void LateUpdate()
         {
-            if (!GameEngine.Instance.isHoverGUI && this.HasMouseInView())
+            if (!RaceEngine.Instance.isHoverGUI && this.HasMouseInView())
             {
                 if (Input.GetMouseButtonDown(1))
                 {

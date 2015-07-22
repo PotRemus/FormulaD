@@ -29,7 +29,16 @@ namespace FormuleD.Engines
                 {
                     board = game.mapName,
                     id = game.id,
-                    players = game.players.Select(p => p.name).ToList()
+                    players = game.players.Select(p => new PlayerSettings()
+                    {
+                        id = p.name,
+                        name = p.name,
+                        isCurrent = p.state != PlayerStateType.Waiting && p.state != PlayerStateType.Dead,
+                        isDead = p.state == PlayerStateType.Dead
+                    }).ToList(),
+                    lastTurn = game.lastTurn,
+                    preview = game.mapPreview,
+                    type = game.type
                 });
             }
             return result;

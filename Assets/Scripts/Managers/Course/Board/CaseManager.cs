@@ -141,7 +141,7 @@ namespace FormuleD.Managers.Course.Board
         {
             if (isCandidate)
             {
-                GameEngine.Instance.OnViewRoute(this, true);
+                RaceEngine.Instance.OnViewRoute(this, true);
             }
         }
 
@@ -149,7 +149,7 @@ namespace FormuleD.Managers.Course.Board
         {
             if (isCandidate)
             {
-                GameEngine.Instance.OnViewRoute(this, false);
+                RaceEngine.Instance.OnViewRoute(this, false);
             }
         }
 
@@ -157,7 +157,7 @@ namespace FormuleD.Managers.Course.Board
         {
             if (isCandidate)
             {
-                GameEngine.Instance.OnSelectRoute(this);
+                RaceEngine.Instance.OnSelectRoute(this);
             }
         }
     }

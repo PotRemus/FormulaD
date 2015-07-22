@@ -109,7 +109,7 @@ namespace FormuleD.Managers.Course.Player
 
         public void OnClick()
         {
-            GameEngine.Instance.OnViewGear(gear, min, max);
+            RaceEngine.Instance.OnViewGear(gear, min, max);
         }
 
         private Color _previousColor;

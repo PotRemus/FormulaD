@@ -65,7 +65,7 @@ namespace FormuleD.Engines
 
         public void SelectedPlayerView(PlayerContext playerContext)
         {
-            GameEngine.Instance.CleanCurrent();
+            RaceEngine.Instance.CleanCurrent();
             playerPanelManager.SelectedPlayer(playerContext);
             this.UpdateFeature(playerContext);
             dePanelManager.UpdateDe(playerContext);
@@ -77,16 +77,16 @@ namespace FormuleD.Engines
                     gear = 1;
                 }
                 var de = dePanelManager.buttonDes[gear - 1];
-                GameEngine.Instance.OnViewGear(gear, de.min, de.max);
+                RaceEngine.Instance.OnViewGear(gear, de.min, de.max);
             }
             else if (playerContext.state == PlayerStateType.ChoseRoute)
             {
                 var gear = playerContext.currentTurn.gear;
-                GameEngine.Instance.OnViewRollDice(gear, playerContext.currentTurn.de);
+                RaceEngine.Instance.OnViewRollDice(gear, playerContext.currentTurn.de);
             }
             else if (playerContext.state == PlayerStateType.Aspiration)
             {
-                GameEngine.Instance.OnAspiration(true);
+                RaceEngine.Instance.OnAspiration(true);
             }
         }
 
@@ -278,7 +278,7 @@ namespace FormuleD.Engines
 
             foreach (var current in route.Where(c => c.isDangerous))
             {
-                var de = GameEngine.Instance.BlackDice();
+                var de = RaceEngine.Instance.BlackDice();
                 if (de <= 4)
                 {
                     _currentPlayer.features.handling = _currentPlayer.features.handling - 1;
@@ -353,8 +353,8 @@ namespace FormuleD.Engines
 
         public void EndTurn()
         {
-            GameEngine.Instance.OnClash(_currentPlayer);
-            GameEngine.Instance.OnBrokenEngine(_currentPlayer);
+            RaceEngine.Instance.OnClash(_currentPlayer);
+            RaceEngine.Instance.OnBrokenEngine(_currentPlayer);
             _currentPlayer.state = PlayerStateType.EndTurn;
             this.CheckIsDead(_currentPlayer);
         }
@@ -515,7 +515,7 @@ namespace FormuleD.Engines
                 var carManager = carLayoutManager.FindCarManager(player);
                 carManager.Dead();
                 var target = BoardEngine.Instance.GetCase(player.GetLastIndex());
-                GameEngine.Instance.AddDangerousCase(target);
+                RaceEngine.Instance.AddDangerousCase(target);
             }
         }
     }

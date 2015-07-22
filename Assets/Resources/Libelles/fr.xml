@@ -3,6 +3,10 @@
   <Resource key="ButtonPlay">Lancer</Resource>
   <Resource key="ButtonCancel">Annuler</Resource>
   <Resource key="Loader">Chargement...</Resource>
+  <Resource key="LauncherSubTitleDay">dernier tour : {0} jour(s)</Resource>
+  <Resource key="LauncherSubTitleHour">dernier tour : {0} heure(s)</Resource>
+  <Resource key="LauncherSubTitleMinute">dernier tour : {0} minute(s)</Resource>
+  <Resource key="LauncherSubTitleSecond">dernier tour : {0} second(s)</Resource>
   <Resource key="LauncherTitle">Formula D Online</Resource>
   <Resource key="LauncherNewGame">Nouvelle Partie</Resource>
   <Resource key="LauncherOnlineGame">Jeux en ligne</Resource>
