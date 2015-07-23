@@ -17,5 +17,12 @@ namespace FormuleD.Models
             public static Color yellow = Color.yellow;
             public static Color green = Color.green;
         }
+
+        public static class TrophyColor
+        {
+            public static Color gold = new Color(233f / 255f, 168f / 255f, 37f / 255f, 1f);
+            public static Color silver = new Color(172f / 255f, 172f / 255f, 172f / 255f, 1f);
+            public static Color bronze = new Color(205f / 255f, 127f / 255f, 50f / 255f, 1f);
+        }
     }
 }

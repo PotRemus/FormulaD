@@ -14,7 +14,7 @@ namespace FormuleD.Models.Contexts
         public DateTime lastTurn;
         public string mapName = "Map1";
         public string mapPreview = @"Assets\Resources\Maps\Image\Map1.png";
-        public int lap;
+        public int turn;
         public List<PlayerContext> players = new List<PlayerContext>();
         public Color[] colorDes;
         public List<IndexDataSource> dangerousCases = new List<IndexDataSource>();

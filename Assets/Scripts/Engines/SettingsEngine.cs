@@ -33,7 +33,7 @@ namespace FormuleD.Engines
                     {
                         id = p.name,
                         name = p.name,
-                        isCurrent = p.state != PlayerStateType.Waiting && p.state != PlayerStateType.Dead,
+                        isCurrent = p.state != PlayerStateType.Waiting && p.IsPlayable(),
                         isDead = p.state == PlayerStateType.Dead
                     }).ToList(),
                     lastTurn = game.lastTurn,

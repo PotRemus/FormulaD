@@ -6,12 +6,15 @@ using System.Collections.Generic;
 using FormuleD.Models.Board;
 using FormuleD.Models.Contexts;
 using FormuleD.Managers.Course.Board;
+using FormuleD.Managers.Course;
 
 namespace FormuleD.Engines
 {
     public class RaceEngine : MonoBehaviour
     {
         public Transform loaderTransform;
+        public EndGameManager endGameManager;
+
         public bool isHoverGUI;
 
         public static RaceEngine Instance = null;
@@ -22,16 +25,17 @@ namespace FormuleD.Engines
                 Debug.LogError("Multiple instances of GameEngine!");
             }
             Instance = this;
+            isHoverGUI = true;
             loaderTransform.gameObject.SetActive(true);
-            isHoverGUI = false;
         }
 
         // Use this for initialization
         void Start()
         {
             BoardEngine.Instance.LoadBoard(ContextEngine.Instance.gameContext.mapName);
-            PlayerEngine.Instance.LoadPlayers(ContextEngine.Instance.gameContext.players.OrderBy(p => p.position).ToList(), BoardEngine.Instance.GetStartCase(), ContextEngine.Instance.gameContext.lap);
+            PlayerEngine.Instance.LoadPlayers(BoardEngine.Instance.GetStartCase());
             loaderTransform.gameObject.SetActive(false);
+            isHoverGUI = false;
         }
 
         private RouteResult _candidateRoutes;
@@ -99,8 +103,11 @@ namespace FormuleD.Engines
 
                 foreach (var routes in _candidateRoutes.badWay)
                 {
+                    //if(_candidateRoutes.goodWay.Any(r => r.Key =)
                     var route = routes.Value
                         .OrderByDescending(r => r.Count - deValue)
+                        //.OrderBy(r => r.Count - deValue)
+                        //.OrderBy(r => r.Count)
                         .ThenByDescending(r => r.Any(c => c.isDangerous)).First();
                     var caseCandidate = route.Last();
                     caseCandidate.UpdateContent(gear, route.Count - 1, route.Count - 1, false, true);
@@ -110,6 +117,8 @@ namespace FormuleD.Engines
                 {
                     var route = routes.Value
                         .OrderByDescending(r => r.route.Count - deValue)
+                        //.OrderBy(r => r.route.Count - deValue)
+                        //.OrderBy(r => r.route.Count)
                         .ThenByDescending(r => r.route.Any(c => c.isDangerous)).First();
                     var caseCandidate = route.route.Last();
                     caseCandidate.UpdateContent(gear, route.route.Count - 1, route.route.Count - 1, true, false);
@@ -119,6 +128,8 @@ namespace FormuleD.Engines
                 {
                     var route = routes.Value
                         .OrderByDescending(r => r.Count - deValue)
+                        //.OrderBy(r => r.Count - deValue)
+                        //.OrderBy(r => r.Count)
                         .ThenByDescending(r => r.Any(c => c.isDangerous)).First();
                     var caseCandidate = route.Last();
                     var difDe = deValue - (route.Count - 1);
@@ -138,7 +149,7 @@ namespace FormuleD.Engines
             int result = 0;
 
             bool specialDeparture = false;
-            if (ContextEngine.Instance.gameContext.lap == 1)
+            if (ContextEngine.Instance.gameContext.turn == 1)
             {
                 //TODO Voir si j'ajoute un teasing pour le mauvais et bon départ
                 int handicape = this.BlackDice();
@@ -181,6 +192,8 @@ namespace FormuleD.Engines
                     {
                         var route = routes.Value
                             .OrderByDescending(r => r.Count - 3)
+                            //.OrderBy(r => r.Count - 3)
+                            //.OrderBy(r => r.Count)
                             .ThenByDescending(r => r.Any(c => c.isDangerous)).First();
                         var caseCandidate = route.Last();
                         var difDe = 3 - (route.Count - 1);
@@ -216,13 +229,19 @@ namespace FormuleD.Engines
                     if (_candidateRoutes.goodWay.ContainsKey(target.itemDataSource.index))
                     {
                         var routes = _candidateRoutes.goodWay[target.itemDataSource.index];
-                        _candidateRoute = routes.OrderByDescending(r => r.Count - de)
+                        _candidateRoute = routes
+                                //.OrderBy(r => r.Count - de)
+                                .OrderByDescending(r => r.Count - de)
+                                //.OrderBy(r => r.Count)
                                 .ThenByDescending(r => r.Any(c => c.isDangerous)).First();
                     }
                     else if (_candidateRoutes.outOfBendWay.ContainsKey(target.itemDataSource.index))
                     {
                         var routes = _candidateRoutes.outOfBendWay[target.itemDataSource.index];
-                        var candidateTemp = routes.OrderByDescending(r => r.route.Count - de)
+                        var candidateTemp = routes
+                                //.OrderBy(r => r.route.Count - de)
+                                .OrderByDescending(r => r.route.Count - de)
+                                //.OrderBy(r => r.route.Count)
                                 .ThenByDescending(r => r.route.Any(c => c.isDangerous)).First();
                         _candidateRoute = candidateTemp.route;
                         _nbOutOfBend = candidateTemp.nbOut;
@@ -231,7 +250,10 @@ namespace FormuleD.Engines
                     else if (_candidateRoutes.badWay.ContainsKey(target.itemDataSource.index))
                     {
                         var routes = _candidateRoutes.badWay[target.itemDataSource.index];
-                        _candidateRoute = routes.OrderByDescending(r => r.Count - de)
+                        _candidateRoute = routes
+                                //.OrderBy(r => r.Count - de)
+                                .OrderByDescending(r => r.Count - de)
+                                //.OrderBy(r => r.Count)
                                 .ThenByDescending(r => r.Any(c => c.isDangerous)).First();
                         _isBadWay = true;
                     }
@@ -415,6 +437,13 @@ namespace FormuleD.Engines
         public void MouseLeaveGUI()
         {
             isHoverGUI = false;
+        }
+
+        public void OnEndGame()
+        {
+            ContextEngine.Instance.gameContext.type = GameType.Completed;
+            endGameManager.gameObject.SetActive(true);
+            endGameManager.OnOpen(ContextEngine.Instance.gameContext.players);
         }
     }
 }

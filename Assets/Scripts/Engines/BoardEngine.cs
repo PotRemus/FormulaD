@@ -207,7 +207,7 @@ namespace FormuleD.Engines
                                 }
                             }
                         }
-                        else if (currentCase.bendDataSource != null || targetCase.bendDataSource != null)
+                        else if (currentCase.bendDataSource == null || targetCase.bendDataSource == null)
                         {
                             var columnDif = target.column - currentCase.itemDataSource.index.column;
                             if (isNewExceeding)

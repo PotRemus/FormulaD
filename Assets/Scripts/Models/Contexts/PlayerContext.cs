@@ -13,13 +13,25 @@ namespace FormuleD.Models.Contexts
         public string name;
         public int position;
         public PlayerColor color;
-        public int turn = -1;
+        public int lap = -1;
         public string lastBend;
         public int stopBend;
         public PlayerStateType state;
         public FeatureContext features;
         public HistoryContext currentTurn;
-        public List<HistoryContext> turnHistroies;
+        public List<HistoryContext> turnHistories;
+
+        public bool IsPlayable()
+        {
+            if (state != PlayerStateType.Finish && state != PlayerStateType.Dead)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
         public Color GetColor()
         {
@@ -49,7 +61,7 @@ namespace FormuleD.Models.Contexts
             }
             else
             {
-                history = turnHistroies.Last();
+                history = turnHistories.Last();
             }
 
             if (history != null)
@@ -81,6 +93,7 @@ namespace FormuleD.Models.Contexts
         ChoseRoute,
         Aspiration,
         EndTurn,
-        Dead
+        Dead,
+        Finish
     }
 }

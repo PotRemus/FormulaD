@@ -1754,12 +1754,12 @@ MonoBehaviour:
     type: 0
     mapName: Map1
     mapPreview: Assets\Resources\Maps\Image\Map1.png
-    lap: 0
+    turn: 0
     players:
     - name: Remus
-      position: 1
+      position: 99
       color: 2
-      turn: 0
+      lap: -1
       lastBend: 
       stopBend: 0
       state: 0
@@ -1776,11 +1776,11 @@ MonoBehaviour:
         outOfBend: 0
         gear: 0
         de: 0
-      turnHistroies: []
+      turnHistories: []
     - name: Coco
-      position: 2
+      position: 99
       color: 0
-      turn: 0
+      lap: -1
       lastBend: 
       stopBend: 0
       state: 0
@@ -1797,7 +1797,7 @@ MonoBehaviour:
         outOfBend: 0
         gear: 0
         de: 0
-      turnHistroies: []
+      turnHistories: []
     colorDes:
     - {r: 1, g: .866666675, b: 0, a: 1}
     - {r: .956862748, g: .623529434, b: .145098045, a: 1}
@@ -1806,7 +1806,7 @@ MonoBehaviour:
     - {r: .572549045, g: .376470596, b: .631372571, a: 1}
     - {r: 0, g: .41568628, b: .701960802, a: 1}
     dangerousCases: []
-    totalLap: 2
+    totalLap: 1
 --- !u!1 &1287727573
 GameObject:
   m_ObjectHideFlags: 0

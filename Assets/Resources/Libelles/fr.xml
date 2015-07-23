@@ -3,6 +3,8 @@
   <Resource key="ButtonPlay">Lancer</Resource>
   <Resource key="ButtonCancel">Annuler</Resource>
   <Resource key="Loader">Chargement...</Resource>
+  <Resource key="EndGameRestart">Relancer</Resource>
+  <Resource key="EndGameView">Voir</Resource>
   <Resource key="LauncherSubTitleDay">dernier tour : {0} jour(s)</Resource>
   <Resource key="LauncherSubTitleHour">dernier tour : {0} heure(s)</Resource>
   <Resource key="LauncherSubTitleMinute">dernier tour : {0} minute(s)</Resource>

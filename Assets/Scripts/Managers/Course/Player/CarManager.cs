@@ -94,6 +94,8 @@ namespace FormuleD.Managers.Course.Player
                         var rotation = new Quaternion(0, 0, 0, 1);
                         rotation.eulerAngles = vectorRotation;
                         this.transform.localRotation = rotation;
+                        _currentTarget = null;
+                        _previousTarget = null;
                         RaceEngine.Instance.OnFinishMouvement();
                     }
                     _previousTarget = _currentTarget;
