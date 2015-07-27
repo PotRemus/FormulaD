@@ -21,7 +21,7 @@ namespace FormuleD.Managers.Course.Player
 
         public void BuildPlayers(List<PlayerContext> players)
         {
-            var currentPlayers = players.OrderBy(p => p.position).ToList();
+            var currentPlayers = players.OrderBy(p => p.index).ToList();
             for (int i = 0; i < currentPlayers.Count; i++)
             {
                 var player = currentPlayers[i];

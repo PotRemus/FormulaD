@@ -12,6 +12,7 @@ namespace FormuleD.Models.Contexts
     {
         public string name;
         public int position;
+        public int index;
         public PlayerColor color;
         public int lap = -1;
         public string lastBend;

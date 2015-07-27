@@ -1806,7 +1806,7 @@ MonoBehaviour:
     - {r: .572549045, g: .376470596, b: .631372571, a: 1}
     - {r: 0, g: .41568628, b: .701960802, a: 1}
     dangerousCases: []
-    totalLap: 1
+    totalLap: 2
 --- !u!1 &1287727573
 GameObject:
   m_ObjectHideFlags: 0

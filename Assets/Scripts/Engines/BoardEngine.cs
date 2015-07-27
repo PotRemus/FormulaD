@@ -114,6 +114,7 @@ namespace FormuleD.Engines
             context.min = min;
             context.max = max;
             context.tire = player.features.tire;
+            context.playerIndex = player.index;
             List<CaseManager> baseRoute = new List<CaseManager>();
             baseRoute.Add(boardManager.FindCaseManager(player.GetLastIndex()));
             this.SearchRoutes(result, context, baseRoute, 0, 0, 0);
@@ -130,6 +131,10 @@ namespace FormuleD.Engines
                 {
                     this.AddOutOfBendRoute(result.outOfBendWay, currentCase.itemDataSource.index, route, outOfBend);
                 }
+                else if (currentCase.standDataSource != null)
+                {
+                    this.AddRoute(result.standWay, currentCase.itemDataSource.index, route);
+                }
                 else
                 {
                     this.AddRoute(result.goodWay, currentCase.itemDataSource.index, route);
@@ -142,6 +147,10 @@ namespace FormuleD.Engines
                 bool isNewExceeding = false;
                 bool isEndExceeding = false;
                 var nextTarget = currentCase.itemDataSource.targets.FirstOrDefault(t => t.enable && t.column == currentCase.itemDataSource.index.column);
+                if (nextTarget == null)
+                {
+                    nextTarget = currentCase.itemDataSource.targets.FirstOrDefault();
+                }
                 var nextcase = boardManager.FindCaseManager(nextTarget);
                 if (currentCase.bendDataSource == null)
                 {
@@ -166,7 +175,36 @@ namespace FormuleD.Engines
                 foreach (var target in currentCase.itemDataSource.targets.Where(t => t.enable))
                 {
                     var targetCase = boardManager.FindCaseManager(target);
-                    if (!targetCase.hasPlayer)
+                    if (targetCase.standDataSource != null)
+                    {
+                        if (targetCase.hasPlayer)
+                        {
+                            if (currentMove < context.min)
+                            {
+                                var newRoute = route.ToList();
+                                newRoute.Add(targetCase);
+                                hasTargetWay = true;
+                                this.AddRoute(result.standWay, targetCase.itemDataSource.index, route.ToList());
+                            }
+                        }
+                        else
+                        {
+                            hasTargetWay = true;
+                            if (targetCase.standDataSource.playerIndex != context.playerIndex)
+                            {
+                                var newRoute = route.ToList();
+                                newRoute.Add(targetCase);
+                                this.SearchRoutes(result, context, newRoute, rowMove, exceeding, outOfBend);
+                            }
+                            else
+                            {
+                                var newRoute = route.ToList();
+                                newRoute.Add(targetCase);
+                                this.AddRoute(result.standWay, targetCase.itemDataSource.index, newRoute);
+                            }
+                        }
+                    }
+                    else if (!targetCase.hasPlayer)
                     {
                         bool continueRoute = false;
                         bool isBadWay = false;
@@ -394,6 +432,7 @@ namespace FormuleD.Engines
         public int tire;
         public int bendStop;
         public string bendName;
+        public int playerIndex;
     }
 
     public class RouteResult
@@ -403,10 +442,12 @@ namespace FormuleD.Engines
             goodWay = new Dictionary<IndexDataSource, List<List<CaseManager>>>();
             outOfBendWay = new Dictionary<IndexDataSource, List<OutOfBendRoute>>();
             badWay = new Dictionary<IndexDataSource, List<List<CaseManager>>>();
+            standWay = new Dictionary<IndexDataSource, List<List<CaseManager>>>();
         }
         public Dictionary<IndexDataSource, List<List<CaseManager>>> goodWay;
         public Dictionary<IndexDataSource, List<OutOfBendRoute>> outOfBendWay;
         public Dictionary<IndexDataSource, List<List<CaseManager>>> badWay;
+        public Dictionary<IndexDataSource, List<List<CaseManager>>> standWay;
     }
 
     public class OutOfBendRoute

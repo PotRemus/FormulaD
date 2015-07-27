@@ -7,6 +7,7 @@
       <Targets>
         <Target row="1" column="0" enable="true"/>
         <Target row="0" column="1" enable="true"/>
+        <Target row="0" column="2" enable="true"/>
       </Targets>
     </Case>
     <Case order="35">
@@ -346,7 +347,38 @@
         <Target row="0" column="1" enable="true"/>
       </Targets>
     </Case>
+
+    <Case order="32">
+      <Index row="0" column="2" />
+      <Position x="559" y="269" />
+      <Targets>
+        <Target row="1" column="2" enable="true"/>
+      </Targets>
+    </Case>
+    <Case order="32">
+      <Index row="1" column="2" />
+      <Position x="548" y="381" />
+      <Targets>
+        <Target row="2" column="2" enable="true"/>
+      </Targets>
+    </Case>
+    <Case order="32">
+      <Index row="2" column="2" />
+      <Position x="546" y="469" />
+      <Targets>
+        <Target row="3" column="2" enable="true"/>
+      </Targets>
+    </Case>
+    <Case order="32">
+      <Index row="3" column="2" />
+      <Position x="550" y="570" />
+      <Targets>
+        <Target row="4" column="0" enable="true"/>
+      </Targets>
+    </Case>
+
   </Cases>
+
   <Bends>
     <Bend name="1" stop="1" min="3" max="5" bestColumn="0">
       <Icon x="740" y="766"/>
@@ -386,4 +418,19 @@
     <Index row="3" column="0" />
     <Index row="1" column="1" />
   </Starts>
+
+  <Stands>
+    <Stand>
+      <Target row="0" column="2" />
+    </Stand>
+    <Stand player="0">
+      <Target row="1" column="2" />
+    </Stand>
+    <Stand player="1">
+      <Target row="2" column="2" />
+    </Stand>
+    <Stand>
+      <Target row="3" column="2" />
+    </Stand>
+  </Stands>
 </Map>

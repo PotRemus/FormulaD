@@ -4,6 +4,8 @@ using FormuleD.Models.Board;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using FormuleD.Models.Contexts;
+using FormuleD.Engines;
 
 namespace FormuleD.Managers.Course.Board
 {
@@ -76,13 +78,19 @@ namespace FormuleD.Managers.Course.Board
                     _boardItems = new Dictionary<IndexDataSource, BoardItem>();
                 }
                 var offset = this.ComptureOffset();
+                var dangerousCases = ContextEngine.Instance.gameContext.dangerousCases;
                 foreach (var caseModel in boardDataSource.cases)
                 {
                     var caseManager = this.CreateCaseManager(caseModel, offset);
                     if (caseManager != null)
                     {
-                        var turnModel = boardDataSource.bends.FirstOrDefault(t => t.Targets.Any(ta => ta.Equals(caseModel.index)));
-                        caseManager.InitCase(caseModel, turnModel);
+                        var bendModel = boardDataSource.bends.FirstOrDefault(t => t.Targets.Any(ta => ta.Equals(caseModel.index)));
+                        var standModel = boardDataSource.stands.FirstOrDefault(s => s.target.Equals(caseModel.index));
+                        caseManager.InitCase(caseModel, bendModel, standModel);
+                        if (dangerousCases.Contains(caseModel.index))
+                        {
+                            caseManager.SetDangerous(true);
+                        }
                         _boardItems.Add(caseModel.index, new BoardItem()
                         {
                             caseManager = caseManager
@@ -117,10 +125,12 @@ namespace FormuleD.Managers.Course.Board
                 }
 
                 var finishManager = this.CreateFinishManager();
-                var firstCases = boardDataSource.cases.GroupBy(k => k.index.column, v => v).OrderBy(l => l.Key).Select(l => l.OrderBy(c => c.order).Select(c => _boardItems[c.index].caseManager).First()).ToArray();
+                var firstCases = boardDataSource.cases.Where(c => !boardDataSource.stands.Any(s => s.Equals(c.index))).GroupBy(k => k.index.column, v => v).OrderBy(l => l.Key).Select(l => l.OrderBy(c => c.order).Select(c => _boardItems[c.index].caseManager).First()).ToArray();
                 firstIndex = firstCases.Select(f => f.itemDataSource.index).ToList();
                 var previousIndex = boardDataSource.cases.GroupBy(k => k.index.column, v => v).OrderBy(l => l.Key).Select(l => l.OrderByDescending(c => c.order).Select(c => c.index).First()).ToArray();
                 finishManager.InitFinish(firstCases, previousIndex.Select(i => this.FindCaseManager(i)).ToArray());
+
+
             }
         }
 

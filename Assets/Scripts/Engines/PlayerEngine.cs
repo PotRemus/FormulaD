@@ -450,27 +450,28 @@ namespace FormuleD.Engines
                 ContextEngine.Instance.gameContext.lastTurn = DateTime.Now;
             }
 
-            if (nextPlayer == null)
+            var playablePlayer = ContextEngine.Instance.gameContext.players.Count(p => p.IsPlayable());
+            if (playablePlayer > 1)
             {
-                ContextEngine.Instance.gameContext.players = this.OrderedPlayerTurn();
-                var test = ContextEngine.Instance.gameContext.players.Count(p => p.IsPlayable());
-                if (ContextEngine.Instance.gameContext.players.Count(p => p.IsPlayable()) > 1)
+                if (nextPlayer == null)
                 {
-                    ContextEngine.Instance.gameContext.turn++;
-                    nextPlayer = ContextEngine.Instance.gameContext.players.FirstOrDefault(p => p.IsPlayable());
+                    ContextEngine.Instance.gameContext.players = this.OrderedPlayerTurn();
+                    var test = ContextEngine.Instance.gameContext.players.Count(p => p.IsPlayable());
+                    if (ContextEngine.Instance.gameContext.players.Count(p => p.IsPlayable()) > 1)
+                    {
+                        ContextEngine.Instance.gameContext.turn++;
+                        nextPlayer = ContextEngine.Instance.gameContext.players.FirstOrDefault(p => p.IsPlayable());
+                    }
                 }
-            }
 
-            if (nextPlayer == null)
-            {
-                RaceEngine.Instance.OnEndGame();
-            }
-            else
-            {
                 nextPlayer.currentTurn = new HistoryContext();
                 nextPlayer.state = PlayerStateType.RollDice;
                 _currentPlayer = nextPlayer;
                 this.SelectedPlayerView(_currentPlayer);
+            }
+            else
+            {
+                RaceEngine.Instance.OnEndGame();
             }
         }
 

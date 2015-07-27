@@ -14,6 +14,8 @@ namespace FormuleD.Managers.Course.Board
     {
         public BoardItemDataSource itemDataSource;
         public BendDataSource bendDataSource;
+        public StandDataSource standDataSource;
+
         public bool hasPlayer;
         public bool isDangerous;
         public bool isCandidate;
@@ -25,7 +27,7 @@ namespace FormuleD.Managers.Course.Board
         private TextMesh _textMesh;
         private Color _previousColor;
 
-        public void InitCase(BoardItemDataSource itemDataSource, BendDataSource turnDataSource)
+        public void InitCase(BoardItemDataSource itemDataSource, BendDataSource turnDataSource, StandDataSource standDataSource)
         {
             _spriteSmallRenderer = this.transform.FindChild("case-board-small").GetComponent<SpriteRenderer>();
             _spriteLargeRenderer = this.transform.FindChild("case-board-large").GetComponent<SpriteRenderer>();
@@ -33,6 +35,7 @@ namespace FormuleD.Managers.Course.Board
             _spriteDangerousRenderer = this.transform.FindChild("case-board-dangerous").GetComponent<SpriteRenderer>();
             _textMesh = this.transform.FindChild("case-board-text").GetComponent<TextMesh>();
 
+            this.standDataSource = standDataSource;
             this.itemDataSource = itemDataSource;
             this.bendDataSource = turnDataSource;
             this.SetDefaultBorder();
@@ -127,6 +130,18 @@ namespace FormuleD.Managers.Course.Board
 
         private void SetDefaultBorder()
         {
+            if (standDataSource != null && standDataSource.playerIndex.HasValue)
+            {
+                var player = ContextEngine.Instance.gameContext.players.FirstOrDefault(p => p.index == standDataSource.playerIndex);
+                if (player != null)
+                {
+                    _spriteLargeRenderer.color = player.GetColor();
+                }
+                else
+                {
+                    _spriteLargeRenderer.color = Config.BoardColor.lineColor;
+                }
+            }
             if (bendDataSource != null)
             {
                 _spriteLargeRenderer.color = Config.BoardColor.turnColor;

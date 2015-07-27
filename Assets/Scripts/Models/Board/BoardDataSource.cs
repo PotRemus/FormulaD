@@ -30,5 +30,9 @@ namespace FormuleD.Models.Board
         [XmlArray("Starts")]
         [XmlArrayItem("Index")]
         public List<IndexDataSource> starts;
+
+        [XmlArray("Stands")]
+        [XmlArrayItem("Stand")]
+        public List<StandDataSource> stands;
     }
 }
