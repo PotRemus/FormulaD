@@ -38,10 +38,8 @@ namespace FormuleD.Engines
             isHoverGUI = false;
         }
 
-        private RouteResult _candidateRoutes;
-        private List<CaseManager> _candidateRoute;
-        private int _nbOutOfBend;
-        private bool _isBadWay;
+        private SearchRouteResult _candidateRoutes;
+        private RouteResult _candidateRoute;
 
         public void OnViewGear(int gear, int min, int max)
         {
@@ -52,38 +50,42 @@ namespace FormuleD.Engines
 
             PlayerEngine.Instance.SelectedDe(gear);
             _candidateRoutes = BoardEngine.Instance.FindRoutes(PlayerEngine.Instance.GetCurrent(), min, max);
-            foreach (var routes in _candidateRoutes.badWay)
+            var player = PlayerEngine.Instance.GetCurrent();
+
+            foreach (var routes in _candidateRoutes.routes)
             {
-                if (!_candidateRoutes.goodWay.Any(g => g.Value.Any(r => routes.Value.Any(br => br.Count == r.Count))))
+                var caseCandidate = routes.Value.First().route.Last();
+                if (routes.Value.Any(r => !r.isBadWay))
                 {
-                    if (_candidateRoutes.goodWay.Count == 0 || routes.Value.Max(br => br.Count) >= min)
+                    var minCandidate = routes.Value.Where(r => !r.isBadWay).Min(r => r.route.Count) - 1;
+                    var maxCandidate = routes.Value.Where(r => !r.isBadWay).Max(r => r.route.Count) - 1;
+                    caseCandidate.UpdateContent(gear, minCandidate, maxCandidate, routes.Value.Any(r => r.nbOutOfBend > 0), false);
+                }
+                else
+                {
+                    var minCandidate = max;
+                    var maxCandidate = min;
+                    var hasRouteCandidate = false;
+                    foreach (var route in routes.Value)
                     {
-                        var caseCandidate = routes.Value.First().Last();
-                        var minCandidate = routes.Value.Min(r => r.Count) - 1;
-                        caseCandidate.UpdateContent(gear, minCandidate, max, false, true);
+                        if (!_candidateRoutes.routes.Any(cr => cr.Value.Any(r => !r.isBadWay && r.route.Count == route.route.Count)))
+                        {
+                            if (route.route.Count < minCandidate)
+                            {
+                                minCandidate = route.route.Count;
+                            }
+                            if (route.route.Count > maxCandidate)
+                            {
+                                maxCandidate = route.route.Count;
+                            }
+                            hasRouteCandidate = true;
+                        }
+                    }
+                    if (hasRouteCandidate)
+                    {
+                        caseCandidate.UpdateContent(gear, minCandidate, maxCandidate, routes.Value.Any(r => r.nbOutOfBend > 0), true);
                     }
                 }
-            }
-            foreach (var route in _candidateRoutes.outOfBendWay)
-            {
-                var caseCandidate = route.Value.First().route.Last();
-                var minCandidate = route.Value.Min(r => r.route.Count) - 1;
-                var maxCandidate = route.Value.Max(r => r.route.Count) - 1;
-                caseCandidate.UpdateContent(gear, minCandidate, maxCandidate, true, false);
-            }
-            foreach (var route in _candidateRoutes.goodWay)
-            {
-                var caseCandidate = route.Value.First().Last();
-                var minCandidate = route.Value.Min(r => r.Count) - 1;
-                var maxCandidate = route.Value.Max(r => r.Count) - 1;
-                caseCandidate.UpdateContent(gear, minCandidate, maxCandidate, false, false);
-            }
-            foreach (var route in _candidateRoutes.standWay)
-            {
-                var caseCandidate = route.Value.First().Last();
-                var minCandidate = route.Value.Min(r => r.Count) - 1;
-                var maxCandidate = route.Value.Max(r => r.Count) - 1;
-                caseCandidate.UpdateContent(gear, minCandidate, maxCandidate, false, false);
             }
         }
 
@@ -104,7 +106,14 @@ namespace FormuleD.Engines
             {
                 var current = BoardEngine.Instance.GetCase(player.GetLastIndex());
                 player.state = PlayerStateType.ChoseRoute;
-                PlayerEngine.Instance.SelectedRoute(new List<CaseManager>() { current }, 0, false);
+                PlayerEngine.Instance.SelectedRoute(new RouteResult()
+                {
+                    route = new List<CaseManager>() { current },
+                    nbOutOfBend = 0,
+                    isStandWay = false,
+                    isBadWay = false,
+                    nbLineMove = 0
+                });
                 this.OnFinishMouvement();
             }
             else
@@ -112,69 +121,58 @@ namespace FormuleD.Engines
                 int minValue;
                 int maxValue;
                 PlayerEngine.Instance.UpdateGear(gear, deValue, out minValue, out maxValue);
-                _candidateRoutes = BoardEngine.Instance.FindRoutes(player, minValue, maxValue);
+                _candidateRoutes = BoardEngine.Instance.FindRoutes(player, minValue - 1, maxValue);
 
-                foreach (var routes in _candidateRoutes.badWay)
+                var playerStandCase = _candidateRoutes.routes.Select(r => r.Value.First().route.Last()).Where(r => r.standDataSource != null && r.standDataSource.playerIndex.HasValue).FirstOrDefault();
+                if (playerStandCase != null)
+                {
+                    var standWay = _candidateRoutes.routes[playerStandCase.itemDataSource.index]
+                        .OrderBy(r => r.nbLineMove)
+                        .ThenBy(r => r.route.Skip(1).Count(c => c.isDangerous))
+                        .FirstOrDefault();
+                    if (standWay != null && standWay.route.Count > 1)
+                    {
+                        var caseCandidate = standWay.route.Last();
+                        caseCandidate.UpdateContent(gear, standWay.route.Count - 1, standWay.route.Count - 1, standWay.route.Any(r => r.isDangerous), false);
+                        caseCandidate.isCandidate = true;
+                    }
+                }
+                else
+                {
+                    var standWay = _candidateRoutes.routes.SelectMany(r => r.Value.Where(c => c.isStandWay).Select(c => c.route))
+                        .OrderByDescending(r => r.Last().itemDataSource.order)
+                        .ThenBy(r => r.Skip(1).Count(c => c.isDangerous))
+                        .FirstOrDefault();
+                    if (standWay != null && standWay.Count > 1)
+                    {
+                        var caseCandidate = standWay.Last();
+                        caseCandidate.UpdateContent(gear, standWay.Count - 1, standWay.Count - 1, standWay.Any(r => r.isDangerous), false);
+                        caseCandidate.isCandidate = true;
+                    }
+                }
+
+                foreach (var routes in _candidateRoutes.routes.Where(r => !r.Value.Any(rv => rv.isStandWay)))
                 {
                     var route = routes.Value
-                        .OrderByDescending(r => r.Count - deValue)
-                        //.OrderBy(r => r.Count - deValue)
-                        //.OrderBy(r => r.Count)
-                        .ThenByDescending(r => r.Any(c => c.isDangerous)).First();
-                    var caseCandidate = route.Last();
+                        .OrderBy(r => r.nbLineMove)
+                        .ThenByDescending(r => r.route.Count - deValue)
+                        .ThenBy(r => r.route.Skip(1).Count(c => c.isDangerous)).First();
 
-                    if (!_candidateRoutes.goodWay.Any(g => g.Value.Any(r => routes.Value.Any(br => br.Count == r.Count))))
+                    if (route.isBadWay || route.route.Count - 1 >= minValue)
                     {
-                        if (_candidateRoutes.goodWay.Count == 0 || routes.Value.Max(br => br.Count) >= minValue)
+                        var caseCandidate = route.route.Last();
+                        var hasWarning = route.nbOutOfBend > 0;
+                        if (!hasWarning && deValue - (route.route.Count - 1) >= 1)
                         {
-                            caseCandidate.UpdateContent(gear, route.Count - 1, route.Count - 1, false, true);
-                            caseCandidate.isCandidate = true;
+                            hasWarning = true;
                         }
+                        if (!hasWarning && route.route.Skip(1).Any(c => c.isDangerous))
+                        {
+                            hasWarning = true;
+                        }
+                        caseCandidate.UpdateContent(gear, route.route.Count - 1, route.route.Count - 1, hasWarning, route.isBadWay);
+                        caseCandidate.isCandidate = true;
                     }
-                }
-                foreach (var routes in _candidateRoutes.outOfBendWay)
-                {
-                    var route = routes.Value
-                        .OrderByDescending(r => r.route.Count - deValue)
-                        //.OrderBy(r => r.route.Count - deValue)
-                        //.OrderBy(r => r.route.Count)
-                        .ThenByDescending(r => r.route.Any(c => c.isDangerous)).First();
-                    var caseCandidate = route.route.Last();
-                    caseCandidate.UpdateContent(gear, route.route.Count - 1, route.route.Count - 1, true, false);
-                    caseCandidate.isCandidate = true;
-                }
-                foreach (var routes in _candidateRoutes.goodWay)
-                {
-                    var route = routes.Value
-                        .OrderByDescending(r => r.Count - deValue)
-                        //.OrderBy(r => r.Count - deValue)
-                        //.OrderBy(r => r.Count)
-                        .ThenByDescending(r => r.Any(c => c.isDangerous)).First();
-                    var caseCandidate = route.Last();
-                    var difDe = deValue - (route.Count - 1);
-                    bool hasWarning = difDe >= 1;
-                    if (!hasWarning && route.Any(r => r.isDangerous))
-                    {
-                        hasWarning = true;
-                    }
-                    caseCandidate.UpdateContent(gear, route.Count - 1, route.Count - 1, hasWarning, false);
-                    caseCandidate.isCandidate = true;
-                }
-                foreach (var routes in _candidateRoutes.standWay)
-                {
-                    var route = routes.Value
-                        .OrderByDescending(r => r.Count - deValue)
-                        //.OrderBy(r => r.Count - deValue)
-                        //.OrderBy(r => r.Count)
-                        .ThenByDescending(r => r.Any(c => c.isDangerous)).First();
-                    var caseCandidate = route.Last();
-                    bool hasWarning = false;
-                    if (route.Any(r => r.isDangerous))
-                    {
-                        hasWarning = true;
-                    }
-                    caseCandidate.UpdateContent(gear, route.Count - 1, route.Count - 1, hasWarning, false);
-                    caseCandidate.isCandidate = true;
                 }
             }
         }
@@ -220,35 +218,72 @@ namespace FormuleD.Engines
                 }
                 var max = 3;
                 _candidateRoutes = BoardEngine.Instance.FindRoutes(player, min, max);
-                if (_candidateRoutes.goodWay.Any())
+                if (_candidateRoutes.routes.Count > 0)
                 {
                     var gear = player.currentTurn.gear;
-                    foreach (var routes in _candidateRoutes.goodWay)
+                    foreach (var routes in _candidateRoutes.routes)
                     {
                         var route = routes.Value
-                            .OrderByDescending(r => r.Count - 3)
-                            //.OrderBy(r => r.Count - 3)
-                            //.OrderBy(r => r.Count)
-                            .ThenByDescending(r => r.Any(c => c.isDangerous)).First();
-                        var caseCandidate = route.Last();
-                        var difDe = 3 - (route.Count - 1);
-                        bool hasWarning = difDe >= 1;
-                        if (!hasWarning && route.Any(r => r.isDangerous))
+                            .OrderBy(r => r.nbLineMove)
+                            .ThenByDescending(r => r.route.Count - max)
+                            .ThenBy(r => r.route.Skip(1).Count(c => c.isDangerous)).First();
+
+                        var hasWarning = route.nbOutOfBend > 0;
+                        if (!hasWarning && 3 - (route.route.Count - 1) >= 1)
                         {
                             hasWarning = true;
                         }
-                        caseCandidate.UpdateContent(gear, route.Count - 1, route.Count - 1, hasWarning, false);
+                        if (!hasWarning && route.route.Skip(1).Any(c => c.isDangerous))
+                        {
+                            hasWarning = true;
+                        }
+
+                        var caseCandidate = route.route.Last();
+                        caseCandidate.UpdateContent(gear, route.route.Count - 1, route.route.Count - 1, hasWarning, route.isBadWay);
                         caseCandidate.isCandidate = true;
                     }
                 }
                 else
                 {
-                    PlayerEngine.Instance.EndTurn();
+                    PlayerEngine.Instance.EndTurn(null);
                 }
             }
             else
             {
-                PlayerEngine.Instance.EndTurn();
+                PlayerEngine.Instance.EndTurn(null);
+            }
+        }
+
+        public void OnStandOut()
+        {
+            var player = PlayerEngine.Instance.GetCurrent();
+            bool hasRoute = false;
+            _candidateRoutes = BoardEngine.Instance.FindRoutes(player, 1, player.currentTurn.standMovement);
+            if (_candidateRoutes.routes.Count > 0)
+            {
+                var maxCount = _candidateRoutes.routes.Max(cr => cr.Value.Max(r => r.route.Count));
+                if (maxCount > 1)
+                {
+                    foreach (var routes in _candidateRoutes.routes)
+                    {
+                        var route = routes.Value.Where(r => r.route.Count == maxCount)
+                            .OrderBy(r => r.nbLineMove)
+                            .ThenBy(r => r.route.Count(c => c.isDangerous)).FirstOrDefault();
+
+                        if (route != null && !route.isBadWay)
+                        {
+                            hasRoute = true;
+                            var caseCandidate = route.route.Last();
+                            caseCandidate.UpdateContent(player.currentTurn.gear, route.route.Count - 1, route.route.Count - 1, false, false);
+                            caseCandidate.isCandidate = true;
+                        }
+                    }
+                }
+            }
+
+            if (!hasRoute)
+            {
+                PlayerEngine.Instance.EndTurn(null);
             }
         }
 
@@ -261,63 +296,36 @@ namespace FormuleD.Engines
                     var player = PlayerEngine.Instance.GetCurrent();
                     var features = player.features;
                     var de = player.currentTurn.de;
-                    if (_candidateRoutes.goodWay.ContainsKey(target.itemDataSource.index))
-                    {
-                        var routes = _candidateRoutes.goodWay[target.itemDataSource.index];
-                        _candidateRoute = routes
-                            //.OrderBy(r => r.Count - de)
-                                .OrderByDescending(r => r.Count - de)
-                            //.OrderBy(r => r.Count)
-                                .ThenByDescending(r => r.Any(c => c.isDangerous)).First();
-                    }
-                    else if (_candidateRoutes.standWay.ContainsKey(target.itemDataSource.index))
-                    {
-                        var routes = _candidateRoutes.standWay[target.itemDataSource.index];
-                        _candidateRoute = routes
-                                //.OrderBy(r => r.Count - de)
-                                //.OrderByDescending(r => r.Count - de)
-                                .OrderBy(r => r.Count)
-                                .ThenByDescending(r => r.Any(c => c.isDangerous)).First();
-                        _isBadWay = true;
-                    }
-                    else if (_candidateRoutes.outOfBendWay.ContainsKey(target.itemDataSource.index))
-                    {
-                        var routes = _candidateRoutes.outOfBendWay[target.itemDataSource.index];
-                        var candidateTemp = routes
-                            //.OrderBy(r => r.route.Count - de)
-                                .OrderByDescending(r => r.route.Count - de)
-                            //.OrderBy(r => r.route.Count)
-                                .ThenByDescending(r => r.route.Any(c => c.isDangerous)).First();
-                        _candidateRoute = candidateTemp.route;
-                        _nbOutOfBend = candidateTemp.nbOut;
-                        features = PlayerEngine.Instance.ComputeOutOfBend(features, candidateTemp.nbOut);
-                    }
-                    else if (_candidateRoutes.badWay.ContainsKey(target.itemDataSource.index))
-                    {
-                        var routes = _candidateRoutes.badWay[target.itemDataSource.index];
-                        _candidateRoute = routes
-                            //.OrderBy(r => r.Count - de)
-                                .OrderByDescending(r => r.Count - de)
-                            //.OrderBy(r => r.Count)
-                                .ThenByDescending(r => r.Any(c => c.isDangerous)).First();
-                        _isBadWay = true;
-                    }
 
+                    if (_candidateRoutes.routes.ContainsKey(target.itemDataSource.index))
+                    {
+                        var routes = _candidateRoutes.routes[target.itemDataSource.index];
+                        _candidateRoute = routes
+                            .OrderBy(r => r.nbLineMove)
+                            .ThenByDescending(r => r.route.Count - de)
+                            .ThenBy(r => r.route.Skip(1).Count(c => c.isDangerous)).First();
 
-                    var nbCase = _candidateRoute.Count - 1;
-                    features = PlayerEngine.Instance.ComputeUseBrake(features, player.state, nbCase);
-                    PlayerEngine.Instance.DisplayWarningFeature(features);
-                    var playerColor = player.GetColor();
-                    BoardEngine.Instance.DrawRoute(_candidateRoute, playerColor);
+                        if (_candidateRoute.nbOutOfBend > 0)
+                        {
+                            features = PlayerEngine.Instance.ComputeOutOfBend(features, _candidateRoute.nbOutOfBend);
+                        }
+
+                        if (!_candidateRoute.isStandWay)
+                        {
+                            var nbCase = _candidateRoute.route.Count - 1;
+                            features = PlayerEngine.Instance.ComputeUseBrake(features, player.state, nbCase);
+                            PlayerEngine.Instance.DisplayWarningFeature(features);
+                        }
+
+                        BoardEngine.Instance.DrawRoute(_candidateRoute.route, player.GetColor());
+                    }
                 }
                 else
                 {
                     if (_candidateRoute != null)
                     {
-                        _nbOutOfBend = 0;
-                        _isBadWay = false;
                         PlayerEngine.Instance.ResetPlayerState();
-                        BoardEngine.Instance.DrawRoute(_candidateRoute);
+                        BoardEngine.Instance.DrawRoute(_candidateRoute.route);
                     }
                 }
             }
@@ -327,18 +335,16 @@ namespace FormuleD.Engines
         {
             if (!isHoverGUI && _candidateRoutes != null)
             {
-                var dest = _candidateRoute.Last();
+                var dest = _candidateRoute.route.Last();
                 if (_candidateRoute == null || !target.itemDataSource.index.Equals(dest.itemDataSource.index))
                 {
                     this.OnViewRoute(target, true);
                 }
                 else
                 {
-                    PlayerEngine.Instance.SelectedRoute(_candidateRoute, _nbOutOfBend, _isBadWay);
-                    PlayerEngine.Instance.MoveCar(_candidateRoute);
+                    PlayerEngine.Instance.SelectedRoute(_candidateRoute);
+                    PlayerEngine.Instance.MoveCar(_candidateRoute.route);
                     _candidateRoute = null;
-                    _nbOutOfBend = 0;
-                    _isBadWay = false;
                     this.CleanCurrent();
                 }
             }
@@ -352,6 +358,10 @@ namespace FormuleD.Engines
             if (player.state == PlayerStateType.Aspiration)
             {
                 this.OnAspiration(true);
+            }
+            else if (player.state == PlayerStateType.StandOut)
+            {
+                this.OnStandOut();
             }
             else
             {
@@ -443,42 +453,11 @@ namespace FormuleD.Engines
         {
             if (_candidateRoutes != null)
             {
-                if (_candidateRoutes.goodWay.Any())
+                foreach (var candidate in _candidateRoutes.routes)
                 {
-                    foreach (var route in _candidateRoutes.goodWay)
-                    {
-                        var lastCaseCandidate = route.Value.First().Last();
-                        lastCaseCandidate.ResetContent();
-                        lastCaseCandidate.isCandidate = false;
-                    }
-                }
-                if (_candidateRoutes.standWay.Any())
-                {
-                    foreach (var route in _candidateRoutes.standWay)
-                    {
-                        var lastCaseCandidate = route.Value.First().Last();
-                        lastCaseCandidate.ResetContent();
-                        lastCaseCandidate.isCandidate = false;
-                    }
-                }
-                if (_candidateRoutes.outOfBendWay.Any())
-                {
-                    foreach (var route in _candidateRoutes.outOfBendWay)
-                    {
-                        var lastCaseCandidate = route.Value.First().route.Last();
-                        lastCaseCandidate.ResetContent();
-                        lastCaseCandidate.isCandidate = false;
-                    }
-                }
-
-                if (_candidateRoutes.badWay.Any())
-                {
-                    foreach (var route in _candidateRoutes.badWay)
-                    {
-                        var lastCaseCandidate = route.Value.First().Last();
-                        lastCaseCandidate.ResetContent();
-                        lastCaseCandidate.isCandidate = false;
-                    }
+                    var lastCaseCandidate = candidate.Value.First().route.Last();
+                    lastCaseCandidate.ResetContent();
+                    lastCaseCandidate.isCandidate = false;
                 }
             }
         }

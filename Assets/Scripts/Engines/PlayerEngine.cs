@@ -35,8 +35,6 @@ namespace FormuleD.Engines
 
         public void LoadPlayers(List<CaseManager> starts)
         {
-            //this.players = players;
-
             for (int i = 0; i < ContextEngine.Instance.gameContext.players.Count; i++)
             {
                 var player = ContextEngine.Instance.gameContext.players[i];
@@ -52,7 +50,7 @@ namespace FormuleD.Engines
                         player.turnHistories.Add(new HistoryContext());
                     }
                     var history = player.turnHistories.Last();
-                    history.path = new List<IndexDataSource>() { startCase.itemDataSource.index };
+                    history.paths = new List<List<IndexDataSource>>() { new List<IndexDataSource>() { startCase.itemDataSource.index } };
                 }
             }
 
@@ -77,9 +75,9 @@ namespace FormuleD.Engines
             if (_previousViewPlayer != null && _previousViewPlayer.turnHistories.Count > 1)
             {
                 var previousHistory = _previousViewPlayer.turnHistories.Last();
-                if (previousHistory.path.Count > 0)
+                if (previousHistory.paths.Any())
                 {
-                    BoardEngine.Instance.CleanRoute(previousHistory.GetFullPath().Select(r => BoardEngine.Instance.GetCase(r)).ToList(), _previousViewPlayer.GetColor());
+                    BoardEngine.Instance.CleanRoute(previousHistory.paths.SelectMany(p => p.Select(i => BoardEngine.Instance.GetCase(i))).ToList(), _previousViewPlayer.GetColor());
                 }
             }
             _previousViewPlayer = playerContext;
@@ -105,13 +103,17 @@ namespace FormuleD.Engines
             {
                 RaceEngine.Instance.OnAspiration(true);
             }
+            else if (playerContext.state == PlayerStateType.StandOut)
+            {
+                RaceEngine.Instance.OnStandOut();
+            }
 
             if (playerContext.turnHistories.Count > 1)
             {
                 var previousHistory = playerContext.turnHistories.Last();
-                if (previousHistory.path.Count > 0)
+                if (previousHistory.paths.Count > 0)
                 {
-                    BoardEngine.Instance.DrawRoute(previousHistory.GetFullPath().Select(r => BoardEngine.Instance.GetCase(r)).ToList(), playerContext.GetColor());
+                    BoardEngine.Instance.DrawRoute(previousHistory.paths.SelectMany(p => p.Select(i => BoardEngine.Instance.GetCase(i))).ToList(), playerContext.GetColor());
                 }
             }
         }
@@ -220,6 +222,10 @@ namespace FormuleD.Engines
             {
                 difDe = 3 - nbCase;
             }
+            else if (state == PlayerStateType.StandOut)
+            {
+                difDe = 0;
+            }
             else
             {
                 difDe = _currentPlayer.currentTurn.de - nbCase;
@@ -270,21 +276,30 @@ namespace FormuleD.Engines
             featurePanelManager.WarningFeature(_currentPlayer.features, features);
         }
 
-        public void SelectedRoute(List<CaseManager> route, int nbOutOfBend, bool isBadWay)
+        public void SelectedRoute(RouteResult candidate)
         {
-            _currentPlayer.features = this.ComputeUseBrake(_currentPlayer.features, _currentPlayer.state, route.Count - 1);
-            _currentPlayer.features = this.ComputeOutOfBend(_currentPlayer.features, nbOutOfBend);
+            var endCase = candidate.route.Last();
+            StandDataSource standData = null;
+            if (endCase.standDataSource != null)
+            {
+                standData = endCase.standDataSource;
+            }
 
-            bool hasNewLap = BoardEngine.Instance.ContainsFinishCase(route.Select(r => r.itemDataSource.index));
+            if (standData == null)
+            {
+                _currentPlayer.features = this.ComputeUseBrake(_currentPlayer.features, _currentPlayer.state, candidate.route.Count - 1);
+                _currentPlayer.features = this.ComputeOutOfBend(_currentPlayer.features, candidate.nbOutOfBend);
+            }
+
+            bool hasNewLap = BoardEngine.Instance.ContainsFinishCase(candidate.route.Select(r => r.itemDataSource.index));
             if (hasNewLap)
             {
                 _currentPlayer.lap = _currentPlayer.lap + 1;
             }
 
-            var endCase = route.Last();
             if (endCase.bendDataSource != null)
             {
-                if (nbOutOfBend == 0 && _currentPlayer.state != PlayerStateType.Aspiration)
+                if (candidate.nbOutOfBend == 0 && _currentPlayer.state != PlayerStateType.Aspiration)
                 {
                     if (_currentPlayer.lastBend == endCase.bendDataSource.name)
                     {
@@ -308,7 +323,7 @@ namespace FormuleD.Engines
                 _currentPlayer.stopBend = 0;
             }
 
-            foreach (var current in route.Where(c => c.isDangerous))
+            foreach (var current in candidate.route.Where(c => c.isDangerous))
             {
                 var de = RaceEngine.Instance.BlackDice();
                 if (de <= 4)
@@ -317,54 +332,39 @@ namespace FormuleD.Engines
                 }
             }
 
-            if (isBadWay)
-            {
-                _currentPlayer.state = PlayerStateType.Dead;
-            }
-            else if (_currentPlayer.state == PlayerStateType.ChoseRoute)
+            if (_currentPlayer.state == PlayerStateType.ChoseRoute)
             {
                 if (_currentPlayer.turnHistories.Any())
                 {
                     var previousHistory = _currentPlayer.turnHistories.Last();
-                    if (previousHistory.path.Count > 0)
+                    if (previousHistory.paths.Any())
                     {
-                        BoardEngine.Instance.CleanRoute(previousHistory.GetFullPath().Select(r => BoardEngine.Instance.GetCase(r)).ToList(), _currentPlayer.GetColor());
+                        BoardEngine.Instance.CleanRoute(previousHistory.paths.SelectMany(p => p.Select(i => BoardEngine.Instance.GetCase(i))).ToList(), _currentPlayer.GetColor());
                     }
                 }
-                _currentPlayer.currentTurn.path = route.Select(r => r.itemDataSource.index).ToList();
-                _currentPlayer.currentTurn.outOfBend = nbOutOfBend;
-                _currentPlayer.currentTurn.aspirations = new List<List<IndexDataSource>>();
-                if (nbOutOfBend == 0)
-                {
-                    _currentPlayer.currentTurn.hasAspiration = this.CheckAspiration(route);
-                    if (_currentPlayer.currentTurn.hasAspiration)
-                    {
-                        _currentPlayer.state = PlayerStateType.Aspiration;
-                        this.CheckIsDead(_currentPlayer);
-                    }
-                    else
-                    {
-                        this.EndTurn();
-                    }
-                }
-                else
-                {
-                    _currentPlayer.currentTurn.hasAspiration = false;
-                    this.EndTurn();
-                }
-            }
-            else if (_currentPlayer.state == PlayerStateType.Aspiration)
-            {
-                _currentPlayer.currentTurn.aspirations.Add(route.Select(r => r.itemDataSource.index).ToList());
-                _currentPlayer.currentTurn.hasAspiration = this.CheckAspiration(route);
-                if (!_currentPlayer.currentTurn.hasAspiration)
+                _currentPlayer.currentTurn.paths.Add(candidate.route.Select(r => r.itemDataSource.index).ToList());
+                _currentPlayer.currentTurn.outOfBend = candidate.nbOutOfBend;
+                if (candidate.nbOutOfBend == 0 && standData == null && !candidate.isBadWay && this.CheckAspiration(candidate.route))
                 {
                     _currentPlayer.state = PlayerStateType.Aspiration;
                     this.CheckIsDead(_currentPlayer);
                 }
                 else
                 {
-                    this.EndTurn();
+                    this.EndTurn(standData);
+                }
+            }
+            else if (_currentPlayer.state == PlayerStateType.Aspiration || _currentPlayer.state == PlayerStateType.StandOut)
+            {
+                _currentPlayer.currentTurn.paths.Add(candidate.route.Select(r => r.itemDataSource.index).ToList());
+                if (standData == null && !candidate.isBadWay && this.CheckAspiration(candidate.route))
+                {
+                    _currentPlayer.state = PlayerStateType.Aspiration;
+                    this.CheckIsDead(_currentPlayer);
+                }
+                else
+                {
+                    this.EndTurn(standData);
                 }
             }
         }
@@ -383,11 +383,40 @@ namespace FormuleD.Engines
             }
         }
 
-        public void EndTurn()
+        public void EndTurn(StandDataSource standDataSource)
         {
-            RaceEngine.Instance.OnClash(_currentPlayer);
-            RaceEngine.Instance.OnBrokenEngine(_currentPlayer);
-            _currentPlayer.state = PlayerStateType.EndTurn;
+            if (standDataSource != null)
+            {
+                if (standDataSource.playerIndex.HasValue && standDataSource.playerIndex.Value == _currentPlayer.index)
+                {
+                    _currentPlayer.features.tire = 6;
+                    var blackDice = RaceEngine.Instance.BlackDice();
+                    if (blackDice <= 10)
+                    {
+                        _currentPlayer.currentTurn.standMovement = Mathf.CeilToInt(((float)blackDice) / 2.0f);
+                        _currentPlayer.currentTurn.gear = 4;
+                        _currentPlayer.state = PlayerStateType.StandOut;
+                    }
+                    else
+                    {
+                        if (_currentPlayer.currentTurn.gear > 4)
+                        {
+                            _currentPlayer.currentTurn.gear = 4;
+                        }
+                        _currentPlayer.state = PlayerStateType.EndTurn;
+                    }
+                }
+                else
+                {
+                    _currentPlayer.state = PlayerStateType.EndTurn;
+                }
+            }
+            else
+            {
+                RaceEngine.Instance.OnClash(_currentPlayer);
+                RaceEngine.Instance.OnBrokenEngine(_currentPlayer);
+                _currentPlayer.state = PlayerStateType.EndTurn;
+            }
             this.CheckIsDead(_currentPlayer);
         }
 
@@ -427,7 +456,7 @@ namespace FormuleD.Engines
             if (_currentPlayer != null)
             {
                 var history = _currentPlayer.currentTurn;
-                var fullPath = history.GetFullPath().ToList();
+                var fullPath = history.paths.SelectMany(p => p.Select(i => i)).ToList();
                 if (history.outOfBend > 0 && _currentPlayer.features.tire == 0 && fullPath.Count > 1)
                 {
                     var carManager = carLayoutManager.FindCarManager(_currentPlayer);
@@ -555,11 +584,27 @@ namespace FormuleD.Engines
         public List<PlayerContext> FindBrokenCandidate()
         {
             List<PlayerContext> result = new List<PlayerContext>();
-            if (_currentPlayer != null && _currentPlayer.currentTurn.gear >= 5)
+            foreach (var player in ContextEngine.Instance.gameContext.players)
             {
-                result.Add(_currentPlayer);
+                var gear = 0;
+                var currentCase = BoardEngine.Instance.GetCase(player.GetLastIndex());
+                var isInStand = currentCase.standDataSource != null;
+                if (player.currentTurn != null)
+                {
+                    gear = player.currentTurn.gear;
+                }
+                else
+                {
+                    var history = player.turnHistories.Last();
+                    gear = history.gear;
+                }
+                if (gear >= 5 && !isInStand)
+                {
+                    result.Add(player);
+                }
             }
-            return ContextEngine.Instance.gameContext.players.Where(p => _currentPlayer.name != p.name && p.turnHistories.Last().gear >= 5).ToList();
+
+            return result;
         }
 
         public void PlayerDead(PlayerContext player)

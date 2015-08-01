@@ -7,7 +7,7 @@
       <Targets>
         <Target row="1" column="0" enable="true"/>
         <Target row="0" column="1" enable="true"/>
-        <Target row="0" column="2" enable="true"/>
+        <Target row="0" column="-1" enable="true"/>
       </Targets>
     </Case>
     <Case order="35">
@@ -339,7 +339,7 @@
         <Target row="22" column="1" enable="true"/>
       </Targets>
     </Case>
-    <Case order="32">
+    <Case order="33">
       <Index row="22" column="1" />
       <Position x="681" y="190" />
       <Targets>
@@ -348,29 +348,29 @@
       </Targets>
     </Case>
 
-    <Case order="32">
-      <Index row="0" column="2" />
+    <Case order="33.1">
+      <Index row="0" column="-1" />
       <Position x="559" y="269" />
       <Targets>
-        <Target row="1" column="2" enable="true"/>
+        <Target row="1" column="-1" enable="true"/>
       </Targets>
     </Case>
-    <Case order="32">
-      <Index row="1" column="2" />
+    <Case order="33.2">
+      <Index row="1" column="-1" />
       <Position x="548" y="381" />
       <Targets>
-        <Target row="2" column="2" enable="true"/>
+        <Target row="2" column="-1" enable="true"/>
       </Targets>
     </Case>
-    <Case order="32">
-      <Index row="2" column="2" />
+    <Case order="33.3">
+      <Index row="2" column="-1" />
       <Position x="546" y="469" />
       <Targets>
-        <Target row="3" column="2" enable="true"/>
+        <Target row="3" column="-1" enable="true"/>
       </Targets>
     </Case>
-    <Case order="32">
-      <Index row="3" column="2" />
+    <Case order="33.4">
+      <Index row="3" column="-1" />
       <Position x="550" y="570" />
       <Targets>
         <Target row="4" column="0" enable="true"/>
@@ -421,16 +421,16 @@
 
   <Stands>
     <Stand>
-      <Target row="0" column="2" />
+      <Target row="0" column="-1" />
     </Stand>
     <Stand player="0">
-      <Target row="1" column="2" />
+      <Target row="1" column="-1" />
     </Stand>
     <Stand player="1">
-      <Target row="2" column="2" />
+      <Target row="2" column="-1" />
     </Stand>
     <Stand>
-      <Target row="3" column="2" />
+      <Target row="3" column="-1" />
     </Stand>
   </Stands>
 </Map>

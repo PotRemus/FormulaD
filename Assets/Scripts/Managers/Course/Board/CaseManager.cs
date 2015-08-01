@@ -142,7 +142,7 @@ namespace FormuleD.Managers.Course.Board
                     _spriteLargeRenderer.color = Config.BoardColor.lineColor;
                 }
             }
-            if (bendDataSource != null)
+            else if (bendDataSource != null)
             {
                 _spriteLargeRenderer.color = Config.BoardColor.turnColor;
             }

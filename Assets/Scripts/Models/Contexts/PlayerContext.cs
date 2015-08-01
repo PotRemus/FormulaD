@@ -48,6 +48,12 @@ namespace FormuleD.Models.Contexts
                 case PlayerColor.green:
                     result = Config.PlayerColor.green;
                     break;
+                case PlayerColor.orange:
+                    result = Config.PlayerColor.orange;
+                    break;
+                case PlayerColor.purple:
+                    result = Config.PlayerColor.purple;
+                    break;
             }
             return result;
         }
@@ -56,7 +62,7 @@ namespace FormuleD.Models.Contexts
         {
             IndexDataSource result = null;
             HistoryContext history = null;
-            if (currentTurn != null && currentTurn.path.Any())
+            if (currentTurn != null && currentTurn.paths.Any())
             {
                 history = currentTurn;
             }
@@ -65,16 +71,9 @@ namespace FormuleD.Models.Contexts
                 history = turnHistories.Last();
             }
 
-            if (history != null)
+            if (history != null && history.paths.Any())
             {
-                if (history.aspirations != null && history.aspirations.Any())
-                {
-                    result = history.aspirations.Last().Last();
-                }
-                else
-                {
-                    result = history.path.Last();
-                }
+                result = history.paths.Last().Last();
             }
             return result;
         }
@@ -85,6 +84,8 @@ namespace FormuleD.Models.Contexts
         bleu,
         yellow,
         green,
+        purple,
+        orange
     }
 
     public enum PlayerStateType
@@ -93,6 +94,7 @@ namespace FormuleD.Models.Contexts
         RollDice,
         ChoseRoute,
         Aspiration,
+        StandOut,
         EndTurn,
         Dead,
         Finish

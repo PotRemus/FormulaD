@@ -1752,12 +1752,13 @@ MonoBehaviour:
   gameContext:
     id: 
     type: 0
-    mapName: Map1
-    mapPreview: Assets\Resources\Maps\Image\Map1.png
+    mapName: Map2
+    mapPreview: Assets\Resources\Maps\Image\Map2.png
     turn: 0
     players:
     - name: Remus
       position: 99
+      index: 0
       color: 2
       lap: -1
       lastBend: 
@@ -1771,14 +1772,14 @@ MonoBehaviour:
         motor: 3
         handling: 3
       currentTurn:
-        path: []
-        hasAspiration: 0
+        standMovement: 0
         outOfBend: 0
         gear: 0
         de: 0
       turnHistories: []
     - name: Coco
       position: 99
+      index: 1
       color: 0
       lap: -1
       lastBend: 
@@ -1792,8 +1793,70 @@ MonoBehaviour:
         motor: 3
         handling: 3
       currentTurn:
-        path: []
-        hasAspiration: 0
+        standMovement: 0
+        outOfBend: 0
+        gear: 0
+        de: 0
+      turnHistories: []
+    - name: Riri
+      position: 99
+      index: 2
+      color: 1
+      lap: -1
+      lastBend: 
+      stopBend: 0
+      state: 0
+      features:
+        tire: 6
+        brake: 3
+        gearbox: 3
+        body: 3
+        motor: 3
+        handling: 3
+      currentTurn:
+        standMovement: 0
+        outOfBend: 0
+        gear: 0
+        de: 0
+      turnHistories: []
+    - name: Fifi
+      position: 99
+      index: 3
+      color: 3
+      lap: -1
+      lastBend: 
+      stopBend: 0
+      state: 0
+      features:
+        tire: 6
+        brake: 3
+        gearbox: 3
+        body: 3
+        motor: 3
+        handling: 3
+      currentTurn:
+        standMovement: 0
+        outOfBend: 0
+        gear: 0
+        de: 0
+      turnHistories: []
+    - name: Loulou
+      position: 99
+      index: 4
+      color: 4
+      lap: -1
+      lastBend: 
+      stopBend: 0
+      state: 0
+      features:
+        tire: 6
+        brake: 3
+        gearbox: 3
+        body: 3
+        motor: 3
+        handling: 3
+      currentTurn:
+        standMovement: 0
         outOfBend: 0
         gear: 0
         de: 0

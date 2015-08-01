@@ -11,7 +11,7 @@ namespace FormuleD.Models.Board
     public class BoardItemDataSource
     {
         [XmlAttribute("order")]
-        public int order;
+        public float order;
 
         [XmlElement("Index")]
         public IndexDataSource index;

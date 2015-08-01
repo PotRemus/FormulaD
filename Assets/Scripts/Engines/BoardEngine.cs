@@ -10,12 +10,14 @@ using FormuleD.Managers;
 using FormuleD.Models.Board;
 using FormuleD.Models.Contexts;
 using FormuleD.Managers.Course.Board;
+using FormuleD.Managers.Course;
 
 namespace FormuleD.Engines
 {
     public class BoardEngine : MonoBehaviour
     {
         public BoardManager boardManager;
+        public CameraManager cameraManager;
 
         private string boardPath = @"Assets\Resources\Maps";
         private List<BoardDataSource> _boards;
@@ -39,6 +41,7 @@ namespace FormuleD.Engines
 
             var boardDataSource = _boards.FirstOrDefault(m => m.name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
             boardManager.InitBoard(boardDataSource);
+            cameraManager.bounds = boardManager.GetBounds();
         }
 
         public CaseManager GetNextCase(CaseManager current)
@@ -102,12 +105,26 @@ namespace FormuleD.Engines
                 }
             }
 
+            if (!result)
+            {
+                var firstIndex = route.First();
+                var firstCase = boardManager.FindCaseManager(firstIndex);
+                if (firstCase.standDataSource != null)
+                {
+                    var lastIndex = route.Last();
+                    var lastCase = boardManager.FindCaseManager(lastIndex);
+                    if (lastCase.standDataSource == null)
+                    {
+                        result = true;
+                    }
+                }
+            }
             return result;
         }
 
-        public RouteResult FindRoutes(PlayerContext player, int min, int max)
+        public SearchRouteResult FindRoutes(PlayerContext player, int min, int max)
         {
-            RouteResult result = new RouteResult();
+            SearchRouteResult result = new SearchRouteResult();
             var context = new SearchRouteContext();
             context.bendName = player.lastBend;
             context.bendStop = player.stopBend;
@@ -115,241 +132,228 @@ namespace FormuleD.Engines
             context.max = max;
             context.tire = player.features.tire;
             context.playerIndex = player.index;
+            context.isLastLap = ContextEngine.Instance.gameContext.totalLap - player.lap <= 1;
             List<CaseManager> baseRoute = new List<CaseManager>();
             baseRoute.Add(boardManager.FindCaseManager(player.GetLastIndex()));
-            this.SearchRoutes(result, context, baseRoute, 0, 0, 0);
+            this.SearchRoutes(result, context, baseRoute, 0, 0, 0, 0);
 
             return result;
         }
-        private void SearchRoutes(RouteResult result, SearchRouteContext context, List<CaseManager> route, int rowMove, int exceeding, int outOfBend)
+
+        private void SearchRoutes(SearchRouteResult result, SearchRouteContext context, List<CaseManager> route, int rowMove, int exceeding, int outOfBend, int nbLineMove)
         {
             var currentMove = route.Count - 1;
             var currentCase = route.Last();
             if (context.min <= currentMove && currentMove <= context.max)
             {
-                if (outOfBend > 0)
-                {
-                    this.AddOutOfBendRoute(result.outOfBendWay, currentCase.itemDataSource.index, route, outOfBend);
-                }
-                else if (currentCase.standDataSource != null)
-                {
-                    this.AddRoute(result.standWay, currentCase.itemDataSource.index, route);
-                }
-                else
-                {
-                    this.AddRoute(result.goodWay, currentCase.itemDataSource.index, route);
-                }
+                result.AddRoute(route.ToList(), outOfBend, currentCase.standDataSource != null, false, nbLineMove);
             }
 
             if (currentMove < context.max)
             {
-                bool isNewOutOfBend = false;
-                bool isNewExceeding = false;
-                bool isEndExceeding = false;
-                var nextTarget = currentCase.itemDataSource.targets.FirstOrDefault(t => t.enable && t.column == currentCase.itemDataSource.index.column);
-                if (nextTarget == null)
+                if (currentCase.standDataSource != null)
                 {
-                    nextTarget = currentCase.itemDataSource.targets.FirstOrDefault();
+                    this.ComputeStandWay(result, context, route, currentCase, currentMove, outOfBend, nbLineMove, rowMove, exceeding);
                 }
-                var nextcase = boardManager.FindCaseManager(nextTarget);
-                if (currentCase.bendDataSource == null)
+                else
                 {
-                    if (nextcase.hasPlayer || nextcase.isDangerous)
+                    var isNewOutOfBend = false;
+                    var nextTarget = currentCase.itemDataSource.targets.FirstOrDefault(t => t.enable && t.column == currentCase.itemDataSource.index.column);
+                    var nextcase = boardManager.FindCaseManager(nextTarget);
+                    if (currentCase.bendDataSource != null && nextcase.bendDataSource == null)
                     {
-                        isNewExceeding = true;
+                        var stop = 0;
+                        if (currentCase.bendDataSource.name == context.bendName)
+                        {
+                            stop = context.bendStop;
+                        }
+                        if (currentCase.bendDataSource.stop > stop)
+                        {
+                            isNewOutOfBend = true;
+                        }
+                    }
+                    if (outOfBend > 0 || isNewOutOfBend)
+                    {
+                        this.ComputeOutOfBendWay(result, context, route, currentCase, nextcase, currentMove, outOfBend, nbLineMove);
+                    }
+                    else if (currentCase.bendDataSource != null)
+                    {
+                        this.ComputeBendWay(result, context, route, currentCase, nbLineMove, currentMove);
+                    }
+                    else
+                    {
+                        this.ComputeLineWay(result, context, route, currentCase, rowMove, exceeding, nbLineMove, currentMove);
                     }
                 }
-                else if (nextcase.bendDataSource == null)
+            }
+        }
+
+        private void ComputeStandWay(SearchRouteResult result, SearchRouteContext context, List<CaseManager> route, CaseManager currentCase, int currentMove, int outOfBend, int nbLineMove, int rowMove, int exceeding)
+        {
+            var targets = currentCase.itemDataSource.targets.Select(t => boardManager.FindCaseManager(t)).ToList();
+            var playerTarget = targets.FirstOrDefault(t => t.standDataSource != null && t.standDataSource.playerIndex.HasValue && t.standDataSource.playerIndex.Value == context.playerIndex);
+            CaseManager targetCase;
+            if (playerTarget != null)
+            {
+                targetCase = playerTarget;
+            }
+            else
+            {
+                targetCase = targets.FirstOrDefault();
+            }
+
+            if (targetCase.hasPlayer && currentMove < context.min)
+            {
+                result.AddRoute(route.ToList(), outOfBend, true, false, nbLineMove);
+            }
+            else if (!targetCase.hasPlayer && targetCase == playerTarget)
+            {
+                var newRoute = route.ToList();
+                newRoute.Add(targetCase);
+                result.AddRoute(newRoute, outOfBend, true, false, nbLineMove);
+            }
+            else if (!targetCase.hasPlayer)
+            {
+                var newRoute = route.ToList();
+                newRoute.Add(targetCase);
+                this.SearchRoutes(result, context, newRoute, rowMove, exceeding, outOfBend, nbLineMove);
+            }
+        }
+
+        private void ComputeOutOfBendWay(SearchRouteResult result, SearchRouteContext context, List<CaseManager> route, CaseManager currentCase, CaseManager nextCase, int currentMove, int outOfBend, int nbLineMove)
+        {
+            if (!nextCase.hasPlayer)
+            {
+                if (outOfBend == 0)
                 {
                     var stop = 0;
                     if (currentCase.bendDataSource.name == context.bendName)
                     {
                         stop = context.bendStop;
                     }
-                    if (currentCase.bendDataSource.stop > stop)
+                    var stopDif = currentCase.bendDataSource.stop - stop;
+                    if (stopDif > 1)
                     {
-                        isNewOutOfBend = true;
+                        var newRoute = route.ToList();
+                        newRoute.Add(nextCase);
+                        result.AddRoute(newRoute, 1, false, true, nbLineMove);
+                        return;
                     }
                 }
-                bool hasTargetWay = false;
-                foreach (var target in currentCase.itemDataSource.targets.Where(t => t.enable))
+                var newOutOfBend = outOfBend + 1;
+                if (newOutOfBend <= context.tire)
                 {
-                    var targetCase = boardManager.FindCaseManager(target);
-                    if (targetCase.standDataSource != null)
-                    {
-                        if (targetCase.hasPlayer)
-                        {
-                            if (currentMove < context.min)
-                            {
-                                var newRoute = route.ToList();
-                                newRoute.Add(targetCase);
-                                hasTargetWay = true;
-                                this.AddRoute(result.standWay, targetCase.itemDataSource.index, route.ToList());
-                            }
-                        }
-                        else
-                        {
-                            hasTargetWay = true;
-                            if (targetCase.standDataSource.playerIndex != context.playerIndex)
-                            {
-                                var newRoute = route.ToList();
-                                newRoute.Add(targetCase);
-                                this.SearchRoutes(result, context, newRoute, rowMove, exceeding, outOfBend);
-                            }
-                            else
-                            {
-                                var newRoute = route.ToList();
-                                newRoute.Add(targetCase);
-                                this.AddRoute(result.standWay, targetCase.itemDataSource.index, newRoute);
-                            }
-                        }
-                    }
-                    else if (!targetCase.hasPlayer)
-                    {
-                        bool continueRoute = false;
-                        bool isBadWay = false;
-
-                        int newRowMove = rowMove;
-                        int newExceeding = exceeding;
-                        int newOutOfBend = outOfBend;
-
-                        if (isNewOutOfBend || outOfBend > 0)
-                        {
-                            if (isNewOutOfBend)
-                            {
-                                var stop = 0;
-                                if (currentCase.bendDataSource.name == context.bendName)
-                                {
-                                    stop = context.bendStop;
-                                }
-                                var stopDif = currentCase.bendDataSource.stop - stop;
-                                if (stopDif > 1)
-                                {
-                                    isBadWay = true;
-                                    continueRoute = false;
-                                }
-                            }
-                            if (!isBadWay)
-                            {
-                                if (newOutOfBend < context.tire)
-                                {
-                                    if (currentCase.itemDataSource.index.column == target.column)
-                                    {
-                                        continueRoute = true;
-                                        newOutOfBend = newOutOfBend + 1;
-                                    }
-                                }
-                                else
-                                {
-                                    isBadWay = true;
-                                }
-                            }
-                        }
-                        else if (currentCase.bendDataSource == null || targetCase.bendDataSource == null)
-                        {
-                            var columnDif = target.column - currentCase.itemDataSource.index.column;
-                            if (isNewExceeding)
-                            {
-                                if (columnDif > 0 || columnDif < 0)
-                                {
-                                    newExceeding = columnDif * -1;
-                                    continueRoute = true;
-                                }
-                                else
-                                {
-                                    newExceeding = 0;
-                                    continueRoute = true;
-                                }
-                            }
-                            else
-                            {
-                                if (columnDif == 0)
-                                {
-                                    if (newExceeding != 0 && isEndExceeding)
-                                    {
-                                        newExceeding = 0;
-                                    }
-                                    continueRoute = true;
-                                }
-                                else if (newExceeding != 0 && columnDif == newExceeding)
-                                {
-                                    continueRoute = true;
-                                    newExceeding = 0;
-                                }
-                                else if (columnDif > 0 && rowMove >= 0 && rowMove < 2)
-                                {
-                                    newRowMove = newRowMove + 1;
-                                    continueRoute = true;
-                                }
-                                else if (columnDif < 0 && rowMove <= 0 && rowMove > -2)
-                                {
-                                    newRowMove = newRowMove - 1;
-                                    continueRoute = true;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            newExceeding = 0;
-                            newRowMove = 0;
-                            continueRoute = true;
-                        }
-
-                        if (continueRoute)
-                        {
-                            hasTargetWay = true;
-                            var newRoute = route.ToList();
-                            newRoute.Add(targetCase);
-                            this.SearchRoutes(result, context, newRoute, newRowMove, newExceeding, newOutOfBend);
-                        }
-                        if (isBadWay)
-                        {
-                            hasTargetWay = true;
-                            var newRoute = route.ToList();
-                            newRoute.Add(targetCase);
-                            this.AddRoute(result.badWay, targetCase.itemDataSource.index, newRoute);
-                        }
-                    }
+                    var newRoute = route.ToList();
+                    newRoute.Add(nextCase);
+                    this.SearchRoutes(result, context, newRoute, 0, 0, newOutOfBend, nbLineMove);
                 }
-
-                if (!hasTargetWay && currentMove < context.min)
+                else
                 {
-                    this.AddRoute(result.badWay, currentCase.itemDataSource.index, route);
+                    var newRoute = route.ToList();
+                    newRoute.Add(nextCase);
+                    result.AddRoute(newRoute, 1, false, true, nbLineMove);
                 }
+            }
+            else if (currentMove < context.min)
+            {
+                result.AddRoute(route.ToList(), outOfBend, false, true, nbLineMove);
             }
         }
 
-        private void AddOutOfBendRoute(Dictionary<IndexDataSource, List<OutOfBendRoute>> routes, IndexDataSource index, List<CaseManager> route, int outOfBend)
+        private void ComputeBendWay(SearchRouteResult result, SearchRouteContext context, List<CaseManager> route, CaseManager currentCase, int nbLineMove, int currentMove)
         {
-            List<OutOfBendRoute> currentRoutes = null;
-            if (routes.ContainsKey(index))
+            bool findWay = false;
+            foreach (var target in currentCase.itemDataSource.targets.Where(t => t.enable))
             {
-                currentRoutes = routes[index];
+                var targetCase = boardManager.FindCaseManager(target);
+                if (!targetCase.hasPlayer)
+                {
+                    var newRoute = route.ToList();
+                    newRoute.Add(targetCase);
+                    this.SearchRoutes(result, context, newRoute, 0, 0, 0, nbLineMove);
+                    findWay = true;
+                }
             }
-            else
+            if (!findWay && currentMove < context.min)
             {
-                currentRoutes = new List<OutOfBendRoute>();
-                routes.Add(index, currentRoutes);
+                result.AddRoute(route.ToList(), 0, false, true, nbLineMove);
             }
-            var outOfBendRoute = new OutOfBendRoute();
-            outOfBendRoute.nbOut = outOfBend;
-            outOfBendRoute.route = route;
-            currentRoutes.Add(outOfBendRoute);
         }
 
-        private void AddRoute(Dictionary<IndexDataSource, List<List<CaseManager>>> routes, IndexDataSource index, List<CaseManager> route)
+        private void ComputeLineWay(SearchRouteResult result, SearchRouteContext context, List<CaseManager> route, CaseManager currentCase, int rowMove, int exceeding, int nbLineMove, int currentMove)
         {
-            List<List<CaseManager>> currentRoutes = null;
-            if (routes.ContainsKey(index))
+            var isNewExceeding = false;
+            var isEndExceeding = false;
+            bool findWay = false;
+            foreach (var target in currentCase.itemDataSource.targets.Where(t => t.enable))
             {
-                currentRoutes = routes[index];
+                var targetCase = boardManager.FindCaseManager(target);
+                if (!targetCase.hasPlayer)
+                {
+                    var newExceeding = exceeding;
+                    var newRowMove = rowMove;
+                    if (targetCase.standDataSource != null && context.isLastLap)
+                    {
+                        continue;
+                    }
+                    else if (targetCase.standDataSource != null)
+                    {
+                        var newRoute = route.ToList();
+                        newRoute.Add(targetCase);
+                        this.SearchRoutes(result, context, newRoute, rowMove, exceeding, 0, nbLineMove);
+                    }
+                    else
+                    {
+                        var isValideWay = false;
+                        var columnDif = target.column - currentCase.itemDataSource.index.column;
+                        if (isNewExceeding)
+                        {
+                            newExceeding = columnDif * -1;
+                            isValideWay = true;
+                        }
+                        else
+                        {
+                            if (columnDif == 0)
+                            {
+                                if (newExceeding != 0 && isEndExceeding)
+                                {
+                                    newExceeding = 0;
+                                }
+                                isValideWay = true;
+                            }
+                            else if (newExceeding != 0 && columnDif == newExceeding)
+                            {
+                                isValideWay = true;
+                                newExceeding = 0;
+                            }
+                            else if (columnDif > 0 && rowMove >= 0 && rowMove < 2)
+                            {
+                                newRowMove = newRowMove + 1;
+                                isValideWay = true;
+                                newExceeding = 0;
+                            }
+                            else if (columnDif < 0 && rowMove <= 0 && rowMove > -2)
+                            {
+                                newRowMove = newRowMove - 1;
+                                isValideWay = true;
+                                newExceeding = 0;
+                            }
+                        }
+
+                        if (isValideWay)
+                        {
+                            findWay = true;
+                            var newRoute = route.ToList();
+                            newRoute.Add(targetCase);
+                            this.SearchRoutes(result, context, newRoute, newRowMove, newExceeding, 0, nbLineMove + 1);
+                        }
+                    }
+                }
             }
-            else
+            if (!findWay && currentMove < context.min)
             {
-                currentRoutes = new List<List<CaseManager>>();
-                routes.Add(index, currentRoutes);
+                result.AddRoute(route.ToList(), 0, false, true, nbLineMove);
             }
-            currentRoutes.Add(route);
         }
 
         private void LoadBoardDataSource()
@@ -381,10 +385,13 @@ namespace FormuleD.Engines
             foreach (var caseRoute in route)
             {
                 caseRoute.UpdateBorder(playerColor);
-                if (previousCaseRoute != null)
+                if (previousCaseRoute != null && !caseRoute.itemDataSource.index.Equals(previousCaseRoute.itemDataSource.index))
                 {
                     var lineRoute = boardManager.FindLineManager(previousCaseRoute, caseRoute);
-                    lineRoute.UpdateColor(playerColor);
+                    if (lineRoute != null)
+                    {
+                        lineRoute.UpdateColor(playerColor);
+                    }
                 }
                 previousCaseRoute = caseRoute;
             }
@@ -400,10 +407,13 @@ namespace FormuleD.Engines
                 {
                     caseRoute.SetDefaultBorder(playerColor);
                 }
-                if (previousCaseRoute != null)
+                if (previousCaseRoute != null && !caseRoute.itemDataSource.index.Equals(previousCaseRoute.itemDataSource.index))
                 {
                     var lineRoute = boardManager.FindLineManager(previousCaseRoute, caseRoute);
-                    lineRoute.SetDefaultColor(playerColor);
+                    if (lineRoute != null)
+                    {
+                        lineRoute.SetDefaultColor(playerColor);
+                    }
                 }
                 previousCaseRoute = caseRoute;
                 count++;
@@ -433,26 +443,57 @@ namespace FormuleD.Engines
         public int bendStop;
         public string bendName;
         public int playerIndex;
+        public bool isLastLap;
     }
 
-    public class RouteResult
+    public class SearchRouteResult
     {
-        public RouteResult()
+        public SearchRouteResult()
         {
-            goodWay = new Dictionary<IndexDataSource, List<List<CaseManager>>>();
-            outOfBendWay = new Dictionary<IndexDataSource, List<OutOfBendRoute>>();
-            badWay = new Dictionary<IndexDataSource, List<List<CaseManager>>>();
-            standWay = new Dictionary<IndexDataSource, List<List<CaseManager>>>();
+            routes = new Dictionary<IndexDataSource, List<RouteResult>>();
         }
-        public Dictionary<IndexDataSource, List<List<CaseManager>>> goodWay;
-        public Dictionary<IndexDataSource, List<OutOfBendRoute>> outOfBendWay;
-        public Dictionary<IndexDataSource, List<List<CaseManager>>> badWay;
-        public Dictionary<IndexDataSource, List<List<CaseManager>>> standWay;
+
+        public Dictionary<IndexDataSource, List<RouteResult>> routes;
+
+        public void AddRoute(List<CaseManager> route, int nbOutOfBend, bool isStandWay, bool isBadWay, int nbLineMove)
+        {
+            if (route != null && route.Count > 0)
+            {
+                List<RouteResult> currentRoutes = null;
+                var target = route.Last().itemDataSource.index;
+                if (routes.ContainsKey(target))
+                {
+                    currentRoutes = routes[target];
+                }
+                else
+                {
+                    currentRoutes = new List<RouteResult>();
+                    routes.Add(target, currentRoutes);
+                }
+                currentRoutes.Add(new RouteResult()
+                {
+                    isBadWay = isBadWay,
+                    isStandWay = isStandWay,
+                    nbLineMove = nbLineMove,
+                    nbOutOfBend = nbOutOfBend,
+                    route = route
+                });
+            }
+        }
     }
 
     public class OutOfBendRoute
     {
         public List<CaseManager> route;
         public int nbOut;
+    }
+
+    public class RouteResult
+    {
+        public List<CaseManager> route;
+        public int nbOutOfBend;
+        public bool isStandWay;
+        public bool isBadWay;
+        public int nbLineMove;
     }
 }

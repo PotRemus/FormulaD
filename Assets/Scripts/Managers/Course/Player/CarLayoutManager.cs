@@ -46,6 +46,7 @@ namespace FormuleD.Managers.Course.Player
 
                 var nextCase = BoardEngine.Instance.GetNextCase(currentCase);
                 carManager.BuildCar(player, currentCase.transform.localPosition, nextCase.transform.localPosition);
+                currentCase.hasPlayer = true;
 
                 _cars.Add(player.name, carManager);
             }

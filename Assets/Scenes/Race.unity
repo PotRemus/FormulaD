@@ -316,7 +316,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: .5}
   m_AnchorMax: {x: 0, y: .5}
   m_AnchoredPosition: {x: 40, y: 0}
-  m_SizeDelta: {x: 30, y: 40}
+  m_SizeDelta: {x: 35, y: 40}
   m_Pivot: {x: 0, y: .5}
 --- !u!114 &18898342
 MonoBehaviour:
@@ -576,6 +576,7 @@ MonoBehaviour:
     cases: []
     bends: []
     starts: []
+    stands: []
   firstIndex: []
 --- !u!1 &246223387
 GameObject:
@@ -1351,7 +1352,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: .5}
   m_AnchorMax: {x: 0, y: .5}
   m_AnchoredPosition: {x: 40, y: 0}
-  m_SizeDelta: {x: 30, y: 40}
+  m_SizeDelta: {x: 35, y: 40}
   m_Pivot: {x: 0, y: .5}
 --- !u!114 &437399084
 MonoBehaviour:
@@ -1645,6 +1646,9 @@ MonoBehaviour:
   zoomSmoothSpeed: 10
   zoomMinSize: 1
   zoomMaxSize: 20
+  bounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!1 &477296119
 GameObject:
   m_ObjectHideFlags: 0
@@ -1990,7 +1994,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: .5}
   m_AnchorMax: {x: 0, y: .5}
   m_AnchoredPosition: {x: 40, y: 0}
-  m_SizeDelta: {x: 30, y: 40}
+  m_SizeDelta: {x: 35, y: 40}
   m_Pivot: {x: 0, y: .5}
 --- !u!114 &532096059
 MonoBehaviour:
@@ -2802,7 +2806,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: .5}
   m_AnchorMax: {x: 0, y: .5}
   m_AnchoredPosition: {x: 40, y: 0}
-  m_SizeDelta: {x: 30, y: 40}
+  m_SizeDelta: {x: 35, y: 40}
   m_Pivot: {x: 0, y: .5}
 --- !u!114 &727372193
 MonoBehaviour:
@@ -3204,7 +3208,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: .5}
   m_AnchorMax: {x: 0, y: .5}
   m_AnchoredPosition: {x: 40, y: 0}
-  m_SizeDelta: {x: 30, y: 40}
+  m_SizeDelta: {x: 40, y: 40}
   m_Pivot: {x: 0, y: .5}
 --- !u!114 &984824080
 MonoBehaviour:
@@ -3378,7 +3382,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: .5}
   m_AnchorMax: {x: 0, y: .5}
   m_AnchoredPosition: {x: 40, y: 0}
-  m_SizeDelta: {x: 30, y: 40}
+  m_SizeDelta: {x: 35, y: 40}
   m_Pivot: {x: 0, y: .5}
 --- !u!114 &1066838791
 MonoBehaviour:
@@ -4570,6 +4574,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boardManager: {fileID: 188964119}
+  cameraManager: {fileID: 456589590}
 --- !u!114 &1361553086
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6304,7 +6309,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: .5}
   m_AnchorMax: {x: 0, y: .5}
   m_AnchoredPosition: {x: 40, y: 0}
-  m_SizeDelta: {x: 30, y: 40}
+  m_SizeDelta: {x: 35, y: 40}
   m_Pivot: {x: 0, y: .5}
 --- !u!114 &1875501510
 MonoBehaviour:

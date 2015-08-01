@@ -11,30 +11,16 @@ namespace FormuleD.Models.Contexts
     {
         public HistoryContext()
         {
-            path = new List<IndexDataSource>();
-            aspirations = new List<List<IndexDataSource>>();
+            //path = new List<IndexDataSource>();
+            //aspirations = new List<List<IndexDataSource>>();
+
+            paths = new List<List<IndexDataSource>>();
         }
 
-        public List<IndexDataSource> path;
-        public bool hasAspiration;
-        public List<List<IndexDataSource>> aspirations;
+        public List<List<IndexDataSource>> paths;
+        public int standMovement;
         public int outOfBend;
         public int gear;
         public int de;
-
-        public IEnumerable<IndexDataSource> GetFullPath()
-        {
-            foreach (var index in path)
-            {
-                yield return index;
-            }
-            foreach (var aspiration in aspirations)
-            {
-                foreach (var index in aspiration)
-                {
-                    yield return index;
-                }
-            }
-        }
     }
 }

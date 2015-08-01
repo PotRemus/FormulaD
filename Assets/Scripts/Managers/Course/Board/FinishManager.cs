@@ -7,41 +7,19 @@ namespace FormuleD.Managers.Course.Board
 {
     public class FinishManager : MonoBehaviour
     {
-        public void InitFinish(CaseManager[] firstCases, CaseManager[] previousCases)
+        public void InitFinish(CaseManager[] firstCases)
         {
-            this.InitPosistion(firstCases, previousCases);
+            var twoFirstCases = firstCases.OrderBy(c => c.itemDataSource.order).Take(2).ToList();
+            var firstPosition = twoFirstCases[0].transform.localPosition;
+            var lastPosition = twoFirstCases[1].transform.localPosition;
+            var firstDif = firstPosition - lastPosition;
+            var newPosition = lastPosition + firstDif / 2;
+            this.transform.localPosition = new Vector3(newPosition.x, newPosition.y, 0.8f);
 
-            var firstPoint = firstCases.First().transform.localPosition;
-            var lastPoint = firstCases.Last().transform.localPosition;
-            
-            var vectorRotation = this.ComputeRotation(firstPoint, lastPoint);
+            var vectorRotation = this.ComputeRotation(twoFirstCases[0].transform.localPosition, twoFirstCases[1].transform.localPosition);
             var rotation = new Quaternion(0, 0, 0, 1);
             rotation.eulerAngles = vectorRotation;
             this.transform.localRotation = rotation;
-        }
-
-        private void InitPosistion(CaseManager[] firstCases, CaseManager[] previousCases)
-        {
-            float smallerDist = float.MaxValue;
-            Vector3 smallerFirst = Vector3.zero;
-            Vector3 smallerPrevious = Vector3.zero;
-            foreach (var firstCase in firstCases)
-            {
-                foreach (var previousCase in previousCases)
-                {
-                    var dist = Vector3.Distance(firstCase.transform.localPosition, previousCase.transform.localPosition);
-                    if (dist != 0 && dist < smallerDist)
-                    {
-                        smallerDist = dist;
-                        smallerFirst = firstCase.transform.localPosition;
-                        smallerPrevious = previousCase.transform.localPosition;
-                    }
-                }
-            }
-
-            var dif = smallerPrevious - smallerFirst;
-            var newLocation = smallerFirst + dif / 2;
-            this.transform.localPosition = new Vector3(newLocation.x, newLocation.y, 0.2f);
         }
 
         private Vector3 ComputeRotation(Vector3 position1, Vector3 position2)

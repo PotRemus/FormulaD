@@ -125,12 +125,9 @@ namespace FormuleD.Managers.Course.Board
                 }
 
                 var finishManager = this.CreateFinishManager();
-                var firstCases = boardDataSource.cases.Where(c => !boardDataSource.stands.Any(s => s.Equals(c.index))).GroupBy(k => k.index.column, v => v).OrderBy(l => l.Key).Select(l => l.OrderBy(c => c.order).Select(c => _boardItems[c.index].caseManager).First()).ToArray();
+                var firstCases = boardDataSource.cases.Where(c => !boardDataSource.stands.Any(s => s.target.Equals(c.index))).GroupBy(k => k.index.column, v => v).OrderBy(l => l.Key).Select(l => l.OrderBy(c => c.order).Select(c => _boardItems[c.index].caseManager).First()).ToArray();
                 firstIndex = firstCases.Select(f => f.itemDataSource.index).ToList();
-                var previousIndex = boardDataSource.cases.GroupBy(k => k.index.column, v => v).OrderBy(l => l.Key).Select(l => l.OrderByDescending(c => c.order).Select(c => c.index).First()).ToArray();
-                finishManager.InitFinish(firstCases, previousIndex.Select(i => this.FindCaseManager(i)).ToArray());
-
-
+                finishManager.InitFinish(firstCases);
             }
         }
 
@@ -209,9 +206,42 @@ namespace FormuleD.Managers.Course.Board
                 else
                 {
                     var nextIndex = currentCase.itemDataSource.targets.FirstOrDefault(i => i.enable && i.column == indexDataSource.column);
+                    if (nextIndex == null)
+                    {
+                        nextIndex = currentCase.itemDataSource.targets.FirstOrDefault();
+                    }
                     currentCase = this.FindCaseManager(nextIndex);
                 }
             }
+            return result;
+        }
+
+        public Bounds GetBounds()
+        {
+            Bounds result = new Bounds();
+            Vector3 min = Vector3.zero;
+            Vector3 max = Vector3.zero;
+            foreach (var child in this.GetComponentsInChildren<CaseManager>())
+            {
+                if (child.transform.position.x > max.x)
+                {
+                    max = new Vector3(child.transform.position.x, max.y, 0);
+                }
+                if (child.transform.position.x < min.x)
+                {
+                    min = new Vector3(child.transform.position.x, min.y, 0);
+                }
+                if (child.transform.position.y > max.y)
+                {
+                    max = new Vector3(max.x, child.transform.position.y, 0);
+                }
+                if (child.transform.position.y < min.y)
+                {
+                    min = new Vector3(min.x, child.transform.position.y, 0);
+                }
+                
+            }
+            result.SetMinMax(min, max);
             return result;
         }
     }

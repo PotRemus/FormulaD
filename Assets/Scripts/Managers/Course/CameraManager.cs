@@ -16,6 +16,12 @@ namespace FormuleD.Managers.Course
         public float zoomMinSize = 1.0f;
         public float zoomMaxSize = 20.0f;
 
+        public Bounds? bounds;
+        //public float maxX;
+        //public float minX;
+        //public float maxY;
+        //public float minY;
+
         private UnityEngine.Camera _camera;
 
         private float _targetOrthographicSize;
@@ -62,6 +68,22 @@ namespace FormuleD.Managers.Course
                     _lastPosition = Input.mousePosition;
                 }
             }
+
+            if (bounds != null)
+            {
+                transform.position = new Vector3(
+                    Mathf.Clamp(transform.position.x, bounds.Value.min.x, bounds.Value.max.x),
+                    Mathf.Clamp(transform.position.y, bounds.Value.min.y, bounds.Value.max.y),
+                    transform.position.z);
+            }
+            //if (bounds != null)
+            //{
+            //    var v3 = transform.position;
+            //    v3.x = Mathf.Clamp(v3.x, bounds.Value.min.x, bounds.Value.max.x);
+            //    v3.y = Mathf.Clamp(v3.y, bounds.Value.min.y, bounds.Value.max.y);
+            //    transform.position = v3;
+            //    bounds = null;
+            //}
         }
 
         private bool HasMouseInView()
