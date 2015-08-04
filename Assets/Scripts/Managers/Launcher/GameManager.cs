@@ -34,7 +34,7 @@ namespace FormuleD.Managers.Launcher
             var rectLocalPanel = localPanelManagers.GetComponent<RectTransform>();
             
             var completedOffset = localOffset + rectLocalPanel.sizeDelta.y;
-            completedPanelManagers.LoadGames(candidates.Where(c => c.type == GameType.Completed).ToList(), gamePreviewPrefab, completedOffset);
+            completedPanelManagers.LoadGames(candidates.Where(c => c.state == GameStateType.Completed).ToList(), gamePreviewPrefab, completedOffset);
             var rectCompletedPanel = localPanelManagers.GetComponent<RectTransform>();
 
             gameScrollContent.sizeDelta = new Vector2(gameScrollContent.sizeDelta.x,

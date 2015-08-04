@@ -89,6 +89,8 @@
     <Compile Include="Assets\Scripts\Managers\Course\Player\DePanelManager.cs" />
     <Compile Include="Assets\Scripts\Managers\Course\Player\FeaturePanelManager.cs" />
     <Compile Include="Assets\Scripts\Managers\Course\Player\PlayerPanelManager.cs" />
+    <Compile Include="Assets\Scripts\Managers\Course\PlayerQualificationManager.cs" />
+    <Compile Include="Assets\Scripts\Managers\Course\QualificationManager.cs" />
     <Compile Include="Assets\Scripts\Managers\Course\SaveManager.cs" />
     <Compile Include="Assets\Scripts\Managers\Launcher\GameManager.cs" />
     <Compile Include="Assets\Scripts\Managers\Launcher\GamePanelManager.cs" />
@@ -105,6 +107,7 @@
     <Compile Include="Assets\Scripts\Models\Contexts\GameContext.cs" />
     <Compile Include="Assets\Scripts\Models\Contexts\HistoryContext.cs" />
     <Compile Include="Assets\Scripts\Models\Contexts\PlayerContext.cs" />
+    <Compile Include="Assets\Scripts\Models\Contexts\QualificationPlayerContext.cs" />
     <Compile Include="Assets\Scripts\Models\GameSettings.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2013\UnityVS.CSharp.targets" />

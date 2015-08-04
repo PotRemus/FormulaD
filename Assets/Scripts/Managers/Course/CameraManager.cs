@@ -17,15 +17,12 @@ namespace FormuleD.Managers.Course
         public float zoomMaxSize = 20.0f;
 
         public Bounds? bounds;
-        //public float maxX;
-        //public float minX;
-        //public float maxY;
-        //public float minY;
 
         private UnityEngine.Camera _camera;
 
         private float _targetOrthographicSize;
         private Vector3 _lastPosition;
+        private Vector3? _targetPosition;
 
         void Awake()
         {
@@ -35,6 +32,24 @@ namespace FormuleD.Managers.Course
 
         void LateUpdate()
         {
+            if (_targetPosition.HasValue)
+            {
+                if (_targetPosition.Value != transform.position)
+                {
+                    var dist = Vector3.Distance(_targetPosition.Value, transform.position);
+                    if (dist < 2)
+                    {
+                        dist = 1;
+                    }
+                    _camera.transform.Translate((_targetPosition.Value - transform.position) / dist);
+                    //transform.position = _targetPosition.Value;
+                }
+                else
+                {
+                    _targetPosition = null;
+                }
+            }
+
             if (!RaceEngine.Instance.isHoverGUI && this.HasMouseInView())
             {
                 if (Input.GetMouseButtonDown(1))
@@ -56,10 +71,6 @@ namespace FormuleD.Managers.Course
                     _targetOrthographicSize -= scroll * zoomSpeed;
                     _targetOrthographicSize = Mathf.Clamp(_targetOrthographicSize, zoomMinSize, zoomMaxSize);
                 }
-                if (_targetOrthographicSize != _camera.orthographicSize)
-                {
-                    _camera.orthographicSize = Mathf.MoveTowards(_camera.orthographicSize, _targetOrthographicSize, zoomSmoothSpeed * Time.deltaTime);
-                }
             }
             else
             {
@@ -69,6 +80,11 @@ namespace FormuleD.Managers.Course
                 }
             }
 
+            if (_targetOrthographicSize != _camera.orthographicSize)
+            {
+                _camera.orthographicSize = Mathf.MoveTowards(_camera.orthographicSize, _targetOrthographicSize, zoomSmoothSpeed * Time.deltaTime);
+            }
+
             if (bounds != null)
             {
                 transform.position = new Vector3(
@@ -76,14 +92,14 @@ namespace FormuleD.Managers.Course
                     Mathf.Clamp(transform.position.y, bounds.Value.min.y, bounds.Value.max.y),
                     transform.position.z);
             }
-            //if (bounds != null)
-            //{
-            //    var v3 = transform.position;
-            //    v3.x = Mathf.Clamp(v3.x, bounds.Value.min.x, bounds.Value.max.x);
-            //    v3.y = Mathf.Clamp(v3.y, bounds.Value.min.y, bounds.Value.max.y);
-            //    transform.position = v3;
-            //    bounds = null;
-            //}
+        }
+
+        public void UpdateZoomPosition(Vector3 position1, Vector3 position2)
+        {
+            _targetPosition = new Vector3(position1.x, position1.y, transform.position.z);
+            var dist = Vector3.Distance(position1, position2);
+            _targetOrthographicSize = dist;
+            _targetOrthographicSize = Mathf.Clamp(_targetOrthographicSize, zoomMinSize, zoomMaxSize);
         }
 
         private bool HasMouseInView()

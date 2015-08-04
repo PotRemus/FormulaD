@@ -10,6 +10,12 @@ namespace FormuleD.Models.Contexts
     [Serializable]
     public class PlayerContext
     {
+        public PlayerContext()
+        {
+            features = new FeatureContext();
+            turnHistories = new List<HistoryContext>();
+        }
+
         public string name;
         public int position;
         public int index;
@@ -21,6 +27,7 @@ namespace FormuleD.Models.Contexts
         public FeatureContext features;
         public HistoryContext currentTurn;
         public List<HistoryContext> turnHistories;
+        public QualificationPlayerContext qualification;
 
         public bool IsPlayable()
         {
@@ -57,28 +64,7 @@ namespace FormuleD.Models.Contexts
             }
             return result;
         }
-
-        public IndexDataSource GetLastIndex()
-        {
-            IndexDataSource result = null;
-            HistoryContext history = null;
-            if (currentTurn != null && currentTurn.paths.Any())
-            {
-                history = currentTurn;
-            }
-            else
-            {
-                history = turnHistories.Last();
-            }
-
-            if (history != null && history.paths.Any())
-            {
-                result = history.paths.Last().Last();
-            }
-            return result;
-        }
     }
-
     public enum PlayerColor
     {
         bleu,

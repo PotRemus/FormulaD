@@ -15,7 +15,7 @@ namespace FormuleD.Managers.Launcher
         public Text nameText;
         public Image image;
 
-        public void LoadPlayer(PlayerSettings player, GameType gameType, int index)
+        public void LoadPlayer(PlayerSettings player, GameStateType gameState, int index)
         {
             if (player == null)
             {
@@ -30,7 +30,7 @@ namespace FormuleD.Managers.Launcher
                 {
                     image.sprite = deadSprite;
                 }
-                else if (gameType == GameType.Completed)
+                else if (gameState == GameStateType.Completed)
                 {
                     if (index == 0)
                     {

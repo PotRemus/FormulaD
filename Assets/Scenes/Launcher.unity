@@ -1752,6 +1752,7 @@ MonoBehaviour:
   gameContext:
     id: 
     type: 0
+    state: 0
     mapName: Map2
     mapPreview: Assets\Resources\Maps\Image\Map2.png
     turn: 0
@@ -1777,6 +1778,12 @@ MonoBehaviour:
         gear: 0
         de: 0
       turnHistories: []
+      qualification:
+        turnHistories: []
+        state: 0
+        outOfBend: 0
+        total: 0
+        isDead: 0
     - name: Coco
       position: 99
       index: 1
@@ -1798,6 +1805,12 @@ MonoBehaviour:
         gear: 0
         de: 0
       turnHistories: []
+      qualification:
+        turnHistories: []
+        state: 0
+        outOfBend: 0
+        total: 0
+        isDead: 0
     - name: Riri
       position: 99
       index: 2
@@ -1819,6 +1832,12 @@ MonoBehaviour:
         gear: 0
         de: 0
       turnHistories: []
+      qualification:
+        turnHistories: []
+        state: 0
+        outOfBend: 0
+        total: 0
+        isDead: 0
     - name: Fifi
       position: 99
       index: 3
@@ -1840,6 +1859,12 @@ MonoBehaviour:
         gear: 0
         de: 0
       turnHistories: []
+      qualification:
+        turnHistories: []
+        state: 0
+        outOfBend: 0
+        total: 0
+        isDead: 0
     - name: Loulou
       position: 99
       index: 4
@@ -1861,6 +1886,12 @@ MonoBehaviour:
         gear: 0
         de: 0
       turnHistories: []
+      qualification:
+        turnHistories: []
+        state: 0
+        outOfBend: 0
+        total: 0
+        isDead: 0
     colorDes:
     - {r: 1, g: .866666675, b: 0, a: 1}
     - {r: .956862748, g: .623529434, b: .145098045, a: 1}

@@ -16,11 +16,23 @@ namespace FormuleD.Managers.Course.Player
 
         void Awake()
         {
-            _players = new Dictionary<string, Transform>();
         }
 
         public void BuildPlayers(List<PlayerContext> players)
         {
+            if (_players != null)
+            {
+                foreach (var player in _players)
+                {
+                    Object.DestroyImmediate(player.Value.gameObject);
+                }
+                _players = new Dictionary<string, Transform>();
+            }
+            else
+            {
+                _players = new Dictionary<string, Transform>();
+            }
+
             var currentPlayers = players.OrderBy(p => p.index).ToList();
             for (int i = 0; i < currentPlayers.Count; i++)
             {
@@ -29,6 +41,8 @@ namespace FormuleD.Managers.Course.Player
                 _players.Add(player.name, playerTransform);
             }
         }
+
+
 
         public void SelectedPlayer(PlayerContext player)
         {

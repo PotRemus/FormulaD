@@ -55,7 +55,7 @@ namespace FormuleD.Managers.Launcher
                 {
                     gamePlayer = game.players[index];
                 }
-                player.LoadPlayer(gamePlayer, game.type, index);
+                player.LoadPlayer(gamePlayer, game.state, index);
                 index++;
             }
 

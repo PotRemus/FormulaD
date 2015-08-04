@@ -823,6 +823,8 @@ MonoBehaviour:
   image: {fileID: 11478492}
   mapTitle: {fileID: 11443164}
   subTitle: {fileID: 11471912}
+  imageMap1: {fileID: 21300000, guid: 81416c222c5022c47b37bfaa795430a2, type: 3}
+  imageMap2: {fileID: 21300000, guid: e75e1c08d6800be42ae2cd36c0a2adae, type: 3}
   players:
   - {fileID: 11455186}
   - {fileID: 11465360}
@@ -1479,7 +1481,17 @@ Prefab:
   serializedVersion: 2
   m_Modification:
     m_TransformParent: {fileID: 0}
-    m_Modifications: []
+    m_Modifications:
+    - target: {fileID: 0}
+      propertyPath: imageMap1
+      value: 
+      objectReference: {fileID: 21300000, guid: 81416c222c5022c47b37bfaa795430a2,
+        type: 3}
+    - target: {fileID: 0}
+      propertyPath: imageMap2
+      value: 
+      objectReference: {fileID: 21300000, guid: e75e1c08d6800be42ae2cd36c0a2adae,
+        type: 3}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 0}
   m_RootGameObject: {fileID: 199036}

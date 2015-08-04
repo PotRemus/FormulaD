@@ -5,6 +5,14 @@
   <Resource key="Loader">Chargement...</Resource>
   <Resource key="EndGameRestart">Relancer</Resource>
   <Resource key="EndGameView">Voir</Resource>
+  <Resource key="EndGameTitle">Fin de partie</Resource>
+  <Resource key="QualificationTitle">Qualification</Resource>
+  <Resource key="QualificationTurnTitle">Lancé</Resource>
+  <Resource key="QualificationDurationTitle">Durée</Resource>
+  <Resource key="QualificationDurationMinute">{0} min</Resource>
+  <Resource key="QualificationPenaltyTitle">Penalité</Resource>
+  <Resource key="QualificationTotalTitle">Points</Resource>
+  <Resource key="StartQualificationButton">Démarrer la qualification</Resource>
   <Resource key="LauncherSubTitleDay">dernier tour : {0} jour(s)</Resource>
   <Resource key="LauncherSubTitleHour">dernier tour : {0} heure(s)</Resource>
   <Resource key="LauncherSubTitleMinute">dernier tour : {0} minute(s)</Resource>

@@ -10,6 +10,7 @@ using FormuleD.Models.Board;
 using FormuleD.Models.Contexts;
 using FormuleD.Managers.Course.Player;
 using FormuleD.Managers.Course.Board;
+using FormuleD.Managers.Course;
 
 namespace FormuleD.Engines
 {
@@ -20,6 +21,8 @@ namespace FormuleD.Engines
         public DePanelManager dePanelManager;
         public PlayerPanelManager playerPanelManager;
         public FeaturePanelManager featurePanelManager;
+
+        public CameraManager cameraManager;
 
         private PlayerContext _currentPlayer;
 
@@ -33,31 +36,61 @@ namespace FormuleD.Engines
             Instance = this;
         }
 
-        public void LoadPlayers(List<CaseManager> starts)
+        public void LoadPlayers(List<PlayerContext> players)
         {
-            for (int i = 0; i < ContextEngine.Instance.gameContext.players.Count; i++)
+            var starts = BoardEngine.Instance.GetStartCase();
+
+            for (int i = 0; i < players.Count; i++)
             {
-                var player = ContextEngine.Instance.gameContext.players[i];
-                if (player.turnHistories == null || !player.turnHistories.Any())
+                var player = players[i];
+                if (ContextEngine.Instance.gameContext.state == GameStateType.Qualification)
                 {
-                    var startCase = starts[i];
-                    if (player.turnHistories == null)
+                    if (player.qualification == null)
                     {
-                        player.turnHistories = new List<HistoryContext>();
+                        player.qualification = new QualificationPlayerContext();
+                        player.qualification.state = QualificationStateType.NoPlay;
+                        player.state = PlayerStateType.Waiting;
                     }
+                    if (player.qualification.turnHistories.Count == 0)
+                    {
+                        var startCase = starts[0];
+                        var history = new HistoryContext();
+                        history.paths = new List<List<IndexDataSource>>() { new List<IndexDataSource>() { startCase.itemDataSource.index } };
+                        player.qualification.turnHistories.Add(history);
+                        player.qualification.startDate = DateTime.UtcNow;
+                    }
+                }
+                else
+                {
                     if (!player.turnHistories.Any())
                     {
-                        player.turnHistories.Add(new HistoryContext());
+                        var startCase = starts[i];
+                        var history = new HistoryContext();
+                        history.paths = new List<List<IndexDataSource>>() { new List<IndexDataSource>() { startCase.itemDataSource.index } };
+                        player.turnHistories.Add(history);
+                        player.state = PlayerStateType.Waiting;
+                        player.lap = -1;
                     }
-                    var history = player.turnHistories.Last();
-                    history.paths = new List<List<IndexDataSource>>() { new List<IndexDataSource>() { startCase.itemDataSource.index } };
                 }
             }
 
-            carLayoutManager.BuildCars(ContextEngine.Instance.gameContext.players);
-            playerPanelManager.BuildPlayers(ContextEngine.Instance.gameContext.players);
+            if (ContextEngine.Instance.gameContext.state == GameStateType.Qualification)
+            {
+                _currentPlayer = players.First();
+                if (_currentPlayer.state == PlayerStateType.Waiting)
+                {
+                    _currentPlayer.currentTurn = new HistoryContext();
+                    _currentPlayer.state = PlayerStateType.RollDice;
+                }
+            }
+            else
+            {
+                _currentPlayer = players.FirstOrDefault(p => p.IsPlayable() && p.state != PlayerStateType.Waiting);
+            }
 
-            _currentPlayer = ContextEngine.Instance.gameContext.players.FirstOrDefault(p => p.IsPlayable() && p.state != PlayerStateType.Waiting);
+            carLayoutManager.BuildCars(players);
+            playerPanelManager.BuildPlayers(players);
+
             if (_currentPlayer == null)
             {
                 this.NextPlayer();
@@ -72,21 +105,39 @@ namespace FormuleD.Engines
         public void SelectedPlayerView(PlayerContext playerContext)
         {
             RaceEngine.Instance.CleanCurrent();
-            if (_previousViewPlayer != null && _previousViewPlayer.turnHistories.Count > 1)
+            if (_previousViewPlayer != null)
             {
-                var previousHistory = _previousViewPlayer.turnHistories.Last();
+                var previousTurnHistories = this.GetTurnHistories(_previousViewPlayer);
+                var previousHistory = previousTurnHistories.Last();
                 if (previousHistory.paths.Any())
                 {
                     BoardEngine.Instance.CleanRoute(previousHistory.paths.SelectMany(p => p.Select(i => BoardEngine.Instance.GetCase(i))).ToList(), _previousViewPlayer.GetColor());
                 }
             }
+            var turnHistories = this.GetTurnHistories(playerContext);
+            if (_previousViewPlayer == null || _previousViewPlayer.name != playerContext.name)
+            {
+                Vector3 previousPoint;
+                var car = carLayoutManager.FindCarManager(playerContext);
+                if (turnHistories.Any())
+                {
+                    CaseManager previousCase = BoardEngine.Instance.GetCase(turnHistories.Last().paths.First().First());
+                    previousPoint = previousCase.transform.position;
+                }
+                else
+                {
+                    previousPoint = car.transform.position;
+                }
+                cameraManager.UpdateZoomPosition(car.transform.position, previousPoint);
+            }
+
             _previousViewPlayer = playerContext;
             playerPanelManager.SelectedPlayer(playerContext);
             this.UpdateFeature(playerContext);
             dePanelManager.UpdateDe(playerContext);
             if (playerContext.state == PlayerStateType.RollDice)
             {
-                int gear = playerContext.turnHistories.Last().gear;
+                int gear = turnHistories.Last().gear;
                 if (gear <= 0)
                 {
                     gear = 1;
@@ -108,9 +159,9 @@ namespace FormuleD.Engines
                 RaceEngine.Instance.OnStandOut();
             }
 
-            if (playerContext.turnHistories.Count > 1)
+            if (turnHistories.Count > 1)
             {
-                var previousHistory = playerContext.turnHistories.Last();
+                var previousHistory = turnHistories.Last();
                 if (previousHistory.paths.Count > 0)
                 {
                     BoardEngine.Instance.DrawRoute(previousHistory.paths.SelectMany(p => p.Select(i => BoardEngine.Instance.GetCase(i))).ToList(), playerContext.GetColor());
@@ -134,7 +185,7 @@ namespace FormuleD.Engines
         private FeatureContext ComputeDemotion(int targetGear)
         {
             FeatureContext result = _currentPlayer.features.Clone();
-            var previousGear = _currentPlayer.turnHistories.Last().gear;
+            var previousGear = this.GetTurnHistories(_currentPlayer).Last().gear;
             var gearDif = previousGear - targetGear;
             if (gearDif >= 4)
             {
@@ -334,9 +385,10 @@ namespace FormuleD.Engines
 
             if (_currentPlayer.state == PlayerStateType.ChoseRoute)
             {
-                if (_currentPlayer.turnHistories.Any())
+                var turnHistories = this.GetTurnHistories(_currentPlayer);
+                if (turnHistories.Any())
                 {
-                    var previousHistory = _currentPlayer.turnHistories.Last();
+                    var previousHistory = turnHistories.Last();
                     if (previousHistory.paths.Any())
                     {
                         BoardEngine.Instance.CleanRoute(previousHistory.paths.SelectMany(p => p.Select(i => BoardEngine.Instance.GetCase(i))).ToList(), _currentPlayer.GetColor());
@@ -365,6 +417,43 @@ namespace FormuleD.Engines
                 else
                 {
                     this.EndTurn(standData);
+                }
+            }
+
+            if (_currentPlayer.state == PlayerStateType.EndTurn || _currentPlayer.state == PlayerStateType.Dead)
+            {
+                var turnHistories = this.GetTurnHistories(_currentPlayer);
+                turnHistories.Add(_currentPlayer.currentTurn);
+                _currentPlayer.currentTurn = null;
+                ContextEngine.Instance.gameContext.lastTurn = DateTime.Now;
+
+                if (ContextEngine.Instance.gameContext.state == GameStateType.Qualification)
+                {
+                    if (_currentPlayer.lap > 0)
+                    {
+                        _currentPlayer.qualification.endDate = DateTime.UtcNow;
+                        int nbDe = _currentPlayer.qualification.turnHistories.Count - 1;
+                        var duration = _currentPlayer.qualification.endDate - _currentPlayer.qualification.startDate;
+                        int totalMin = Mathf.FloorToInt((float)duration.TotalMinutes);
+                        _currentPlayer.qualification.total = nbDe + totalMin + _currentPlayer.qualification.outOfBend;
+                        _currentPlayer.qualification.state = QualificationStateType.Completed;
+                        _currentPlayer.state = PlayerStateType.Finish;
+                    }
+                    else if (_currentPlayer.state == PlayerStateType.Dead)
+                    {
+                        _currentPlayer.qualification.endDate = DateTime.UtcNow;
+                        _currentPlayer.qualification.state = QualificationStateType.Completed;
+                        _currentPlayer.qualification.isDead = true;
+                    }
+                }
+                else if (_currentPlayer.lap == ContextEngine.Instance.gameContext.totalLap)
+                {
+                    _currentPlayer.state = PlayerStateType.Finish;
+                    _currentPlayer.position = ContextEngine.Instance.gameContext.players.Where(p => p.state == PlayerStateType.Finish).Count();
+                }
+                else if (_currentPlayer.state != PlayerStateType.Dead)
+                {
+                    _currentPlayer.state = PlayerStateType.Waiting;
                 }
             }
         }
@@ -435,7 +524,7 @@ namespace FormuleD.Engines
 
                     var nextPosition = new Vector3(nextCase.transform.position.x, nextCase.transform.position.y, carManager.transform.position.z);
                     var movements = route.Select(d => new Vector3(d.transform.position.x, d.transform.position.y, carManager.transform.position.z));
-                    carManager.AddMovements(movements, nextPosition);
+                    carManager.AddMovements(movements, nextPosition, _currentPlayer.currentTurn.gear);
                 }
             }
         }
@@ -464,43 +553,40 @@ namespace FormuleD.Engines
                     carManager.ReturnCar(previousCase.transform.position);
                     history.gear = 0;
                 }
-                if (_currentPlayer.lap == ContextEngine.Instance.gameContext.totalLap)
-                {
-                    _currentPlayer.state = PlayerStateType.Finish;
-                    _currentPlayer.position = ContextEngine.Instance.gameContext.players.Where(p => p.state == PlayerStateType.Finish).Count();
-                }
-                else
-                {
-                    _currentPlayer.state = PlayerStateType.Waiting;
-                }
-                _currentPlayer.turnHistories.Add(_currentPlayer.currentTurn);
-                _currentPlayer.currentTurn = null;
                 nextPlayer = this.FindNextPlayer(_currentPlayer);
-                ContextEngine.Instance.gameContext.lastTurn = DateTime.Now;
             }
 
-            var playablePlayer = ContextEngine.Instance.gameContext.players.Count(p => p.IsPlayable());
-            if (playablePlayer > 1)
+            if (ContextEngine.Instance.gameContext.state == GameStateType.Qualification)
             {
-                if (nextPlayer == null)
-                {
-                    ContextEngine.Instance.gameContext.players = this.OrderedPlayerTurn();
-                    var test = ContextEngine.Instance.gameContext.players.Count(p => p.IsPlayable());
-                    if (ContextEngine.Instance.gameContext.players.Count(p => p.IsPlayable()) > 1)
-                    {
-                        ContextEngine.Instance.gameContext.turn++;
-                        nextPlayer = ContextEngine.Instance.gameContext.players.FirstOrDefault(p => p.IsPlayable());
-                    }
-                }
-
-                nextPlayer.currentTurn = new HistoryContext();
-                nextPlayer.state = PlayerStateType.RollDice;
-                _currentPlayer = nextPlayer;
+                _currentPlayer.currentTurn = new HistoryContext();
+                _currentPlayer.state = PlayerStateType.RollDice;
                 this.SelectedPlayerView(_currentPlayer);
             }
             else
             {
-                RaceEngine.Instance.OnEndGame();
+                var playablePlayer = ContextEngine.Instance.gameContext.players.Count(p => p.IsPlayable());
+                if (playablePlayer > 1)
+                {
+                    if (nextPlayer == null)
+                    {
+                        ContextEngine.Instance.gameContext.players = this.OrderedPlayerTurn();
+                        var test = ContextEngine.Instance.gameContext.players.Count(p => p.IsPlayable());
+                        if (ContextEngine.Instance.gameContext.players.Count(p => p.IsPlayable()) > 1)
+                        {
+                            ContextEngine.Instance.gameContext.turn++;
+                            nextPlayer = ContextEngine.Instance.gameContext.players.FirstOrDefault(p => p.IsPlayable());
+                        }
+                    }
+
+                    nextPlayer.currentTurn = new HistoryContext();
+                    nextPlayer.state = PlayerStateType.RollDice;
+                    _currentPlayer = nextPlayer;
+                    this.SelectedPlayerView(_currentPlayer);
+                }
+                else
+                {
+                    RaceEngine.Instance.OnEndGame();
+                }
             }
         }
 
@@ -511,9 +597,9 @@ namespace FormuleD.Engines
             result = result
                 .OrderBy(p => p.position)
                 .ThenByDescending(p => p.lap)
-                .ThenByDescending(p => BoardEngine.Instance.GetCase(p.GetLastIndex()).itemDataSource.order)
-                .ThenByDescending(p => p.turnHistories.Last().gear)
-                .ThenBy(p => BoardEngine.Instance.IsBestColumnTurn(p.GetLastIndex()));
+                .ThenByDescending(p => BoardEngine.Instance.GetCase(this.GetCurrentIndex(p)).itemDataSource.order)
+                .ThenByDescending(p => this.GetTurnHistories(p).Last().gear)
+                .ThenBy(p => BoardEngine.Instance.IsBestColumnTurn(this.GetCurrentIndex(p)));
             return result.ToList();
         }
 
@@ -539,7 +625,7 @@ namespace FormuleD.Engines
 
         private void UpdateFeature(PlayerContext player)
         {
-            var currentCase = BoardEngine.Instance.GetCase(player.GetLastIndex());
+            var currentCase = BoardEngine.Instance.GetCase(this.GetCurrentIndex(player));
             var currentStop = 0;
             var maxStop = 0;
             if (currentCase.bendDataSource != null)
@@ -565,8 +651,9 @@ namespace FormuleD.Engines
                 var nextCase = BoardEngine.Instance.GetNextCase(target);
                 if (nextCase.hasPlayer)
                 {
-                    var nextPlayer = ContextEngine.Instance.gameContext.players.FirstOrDefault(p => p.name != _currentPlayer.name && p.GetLastIndex().Equals(nextCase.itemDataSource.index));
-                    var nextGear = nextPlayer.turnHistories.Last().gear;
+                    var nextPlayer = ContextEngine.Instance.gameContext.players.FirstOrDefault(p => p.name != _currentPlayer.name && this.GetCurrentIndex(p).Equals(nextCase.itemDataSource.index));
+                    var turnHistories = this.GetTurnHistories(nextPlayer);
+                    var nextGear = turnHistories.Last().gear;
                     if (nextGear >= 4 && currentGear >= nextGear)
                     {
                         result = true;
@@ -578,7 +665,7 @@ namespace FormuleD.Engines
 
         public PlayerContext FindPlayer(IndexDataSource index)
         {
-            return ContextEngine.Instance.gameContext.players.FirstOrDefault(p => p.GetLastIndex().Equals(index));
+            return ContextEngine.Instance.gameContext.players.FirstOrDefault(p => this.GetCurrentIndex(p).Equals(index));
         }
 
         public List<PlayerContext> FindBrokenCandidate()
@@ -587,7 +674,7 @@ namespace FormuleD.Engines
             foreach (var player in ContextEngine.Instance.gameContext.players)
             {
                 var gear = 0;
-                var currentCase = BoardEngine.Instance.GetCase(player.GetLastIndex());
+                var currentCase = BoardEngine.Instance.GetCase(this.GetCurrentIndex(player));
                 var isInStand = currentCase.standDataSource != null;
                 if (player.currentTurn != null)
                 {
@@ -595,7 +682,7 @@ namespace FormuleD.Engines
                 }
                 else
                 {
-                    var history = player.turnHistories.Last();
+                    var history = this.GetTurnHistories(player).Last();
                     gear = history.gear;
                 }
                 if (gear >= 5 && !isInStand)
@@ -613,9 +700,57 @@ namespace FormuleD.Engines
             {
                 var carManager = carLayoutManager.FindCarManager(player);
                 carManager.Dead();
-                var target = BoardEngine.Instance.GetCase(player.GetLastIndex());
+                var target = BoardEngine.Instance.GetCase(this.GetCurrentIndex(player));
                 RaceEngine.Instance.AddDangerousCase(target);
             }
+        }
+
+        public List<HistoryContext> GetTurnHistories(PlayerContext player)
+        {
+            List<HistoryContext> result = null;
+            if (ContextEngine.Instance.gameContext.state == GameStateType.Qualification)
+            {
+                if (player.qualification != null)
+                {
+                    result = player.qualification.turnHistories;
+                }
+            }
+            else
+            {
+                result = player.turnHistories;
+            }
+            return result;
+        }
+
+        public IndexDataSource GetCurrentIndex(PlayerContext player)
+        {
+            IndexDataSource result = null;
+            HistoryContext history = null;
+            if (player.currentTurn != null && player.currentTurn.paths.Any())
+            {
+                history = player.currentTurn;
+            }
+            else
+            {
+                if (ContextEngine.Instance.gameContext.state == GameStateType.Qualification)
+                {
+                    if (player.qualification != null)
+                    {
+                        history = player.qualification.turnHistories.Last();
+                    }
+                }
+                else
+                {
+                    history = player.turnHistories.Last();
+                }
+            }
+
+            if (history != null && history.paths.Any())
+            {
+                result = history.paths.Last().Last();
+            }
+
+            return result;
         }
     }
 }

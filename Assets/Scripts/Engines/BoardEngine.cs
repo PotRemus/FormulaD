@@ -134,7 +134,8 @@ namespace FormuleD.Engines
             context.playerIndex = player.index;
             context.isLastLap = ContextEngine.Instance.gameContext.totalLap - player.lap <= 1;
             List<CaseManager> baseRoute = new List<CaseManager>();
-            baseRoute.Add(boardManager.FindCaseManager(player.GetLastIndex()));
+            var currentIndex = PlayerEngine.Instance.GetCurrentIndex(player);
+            baseRoute.Add(boardManager.FindCaseManager(currentIndex));
             this.SearchRoutes(result, context, baseRoute, 0, 0, 0, 0);
 
             return result;

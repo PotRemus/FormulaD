@@ -40,7 +40,7 @@ namespace FormuleD.Managers.Course.Player
             for (int i = 0; i < players.Count; i++)
             {
                 var player = players[i];
-                var lastIndex = player.GetLastIndex();
+                var lastIndex = PlayerEngine.Instance.GetCurrentIndex(player);
                 var currentCase = BoardEngine.Instance.GetCase(lastIndex);
                 var carManager = this.CreateCarManager(currentCase);
 
@@ -66,7 +66,7 @@ namespace FormuleD.Managers.Course.Player
             {
                 foreach (var car in _cars)
                 {
-                    Destroy(car.Value);
+                    DestroyImmediate(car.Value.gameObject);
                 }
                 _cars = null;
             }

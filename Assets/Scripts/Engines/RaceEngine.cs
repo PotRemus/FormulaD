@@ -14,6 +14,9 @@ namespace FormuleD.Engines
     {
         public Transform loaderTransform;
         public EndGameManager endGameManager;
+        public QualificationManager qualificationManager;
+
+        public CameraManager cameraManager;
 
         public bool isHoverGUI;
 
@@ -33,9 +36,20 @@ namespace FormuleD.Engines
         void Start()
         {
             BoardEngine.Instance.LoadBoard(ContextEngine.Instance.gameContext.mapName);
-            PlayerEngine.Instance.LoadPlayers(BoardEngine.Instance.GetStartCase());
+            if (ContextEngine.Instance.gameContext.state == GameStateType.Qualification)
+            {
+                OnViewQualificationPanel();
+            }
+            else if (ContextEngine.Instance.gameContext.state == GameStateType.Completed)
+            {
+                OnEndGame();
+            }
+            else //if(ContextEngine.Instance.gameContext.state == GameStateType.Race)
+            {
+                PlayerEngine.Instance.LoadPlayers(ContextEngine.Instance.gameContext.players);
+                isHoverGUI = false;
+            }
             loaderTransform.gameObject.SetActive(false);
-            isHoverGUI = false;
         }
 
         private SearchRouteResult _candidateRoutes;
@@ -49,8 +63,13 @@ namespace FormuleD.Engines
             }
 
             PlayerEngine.Instance.SelectedDe(gear);
-            _candidateRoutes = BoardEngine.Instance.FindRoutes(PlayerEngine.Instance.GetCurrent(), min, max);
             var player = PlayerEngine.Instance.GetCurrent();
+            _candidateRoutes = BoardEngine.Instance.FindRoutes(player, min, max);
+            
+            //var currentIndex = player.GetLastIndex();
+            //var currentCase = BoardEngine.Instance.GetCase(currentIndex);
+            //CaseManager lastCase = _candidateRoutes.routes.Last().Value.Last().route.Last();
+            //cameraManager.UpdateZoomPosition(currentCase.transform.position, lastCase.transform.position);
 
             foreach (var routes in _candidateRoutes.routes)
             {
@@ -104,7 +123,7 @@ namespace FormuleD.Engines
             var player = PlayerEngine.Instance.GetCurrent();
             if (deValue == 0)
             {
-                var current = BoardEngine.Instance.GetCase(player.GetLastIndex());
+                var current = BoardEngine.Instance.GetCase(PlayerEngine.Instance.GetCurrentIndex(player));
                 player.state = PlayerStateType.ChoseRoute;
                 PlayerEngine.Instance.SelectedRoute(new RouteResult()
                 {
@@ -342,8 +361,8 @@ namespace FormuleD.Engines
                 }
                 else
                 {
-                    PlayerEngine.Instance.SelectedRoute(_candidateRoute);
                     PlayerEngine.Instance.MoveCar(_candidateRoute.route);
+                    PlayerEngine.Instance.SelectedRoute(_candidateRoute);
                     _candidateRoute = null;
                     this.CleanCurrent();
                 }
@@ -369,13 +388,27 @@ namespace FormuleD.Engines
                 {
                     PlayerEngine.Instance.PlayerDead(player);
                 }
-                PlayerEngine.Instance.NextPlayer();
+                if (ContextEngine.Instance.gameContext.state == GameStateType.Qualification)
+                {
+                    if (player.qualification.state == QualificationStateType.Completed)
+                    {
+                        this.OnViewQualificationPanel();
+                    }
+                    else
+                    {
+                        PlayerEngine.Instance.NextPlayer();
+                    }
+                }
+                else
+                {
+                    PlayerEngine.Instance.NextPlayer();
+                }
             }
         }
 
         public void OnClash(PlayerContext player)
         {
-            var target = BoardEngine.Instance.GetCase(player.GetLastIndex());
+            var target = BoardEngine.Instance.GetCase(PlayerEngine.Instance.GetCurrentIndex(player));
             List<CaseManager> candidates = BoardEngine.Instance.GetClashCandidate(target);
             if (candidates.Any())
             {
@@ -419,7 +452,7 @@ namespace FormuleD.Engines
                         {
                             //TODO faire une animation pour la case moteur
                             candidate.features.motor = candidate.features.motor - 1;
-                            var target = BoardEngine.Instance.GetCase(candidate.GetLastIndex());
+                            var target = BoardEngine.Instance.GetCase(PlayerEngine.Instance.GetCurrentIndex(candidate));
                             this.AddDangerousCase(target);
                             if (player.name != candidate.name)
                             {
@@ -474,9 +507,26 @@ namespace FormuleD.Engines
 
         public void OnEndGame()
         {
-            ContextEngine.Instance.gameContext.type = GameType.Completed;
+            ContextEngine.Instance.gameContext.state = GameStateType.Completed;
             endGameManager.gameObject.SetActive(true);
             endGameManager.OnOpen(ContextEngine.Instance.gameContext.players);
+        }
+
+        public void OnViewQualificationPanel()
+        {
+            var players = ContextEngine.Instance.gameContext.players;
+            var orderedPlayer = new List<PlayerContext>();
+            orderedPlayer.AddRange(players.Where(p => p.qualification != null && p.qualification.state == QualificationStateType.Completed).OrderBy(p => p.qualification.total));
+            orderedPlayer.AddRange(players.Where(p => p.qualification == null || p.qualification.state != QualificationStateType.Completed).OrderBy(p => p.index));
+            ContextEngine.Instance.gameContext.players = orderedPlayer;
+            qualificationManager.gameObject.SetActive(true);
+            qualificationManager.OnOpen(ContextEngine.Instance.gameContext.players);
+        }
+
+        public void OnStartQualification(PlayerContext player)
+        {
+            PlayerEngine.Instance.LoadPlayers(new List<PlayerContext>() { player });
+            qualificationManager.gameObject.SetActive(false);
         }
     }
 }

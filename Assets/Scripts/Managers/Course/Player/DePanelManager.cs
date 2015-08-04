@@ -38,7 +38,7 @@ namespace FormuleD.Managers.Course.Player
 
         private void LoadDeChoise(PlayerContext player)
         {
-            var gear = player.turnHistories.Last().gear;
+            var gear = PlayerEngine.Instance.GetTurnHistories(player).Last().gear;
             var indexMin = gear - 1 - 1;
             if (player.features.gearbox > 0 && player.features.brake > 0 && player.features.motor > 0)
             {
@@ -98,7 +98,7 @@ namespace FormuleD.Managers.Course.Player
             int gear = 0;
             if (player.state == PlayerStateType.Waiting || !player.IsPlayable())
             {
-                gear = player.turnHistories.Last().gear;
+                gear = PlayerEngine.Instance.GetTurnHistories(player).Last().gear;
             }
             else
             {
@@ -112,7 +112,7 @@ namespace FormuleD.Managers.Course.Player
                     int de = 0;
                     if (player.state == PlayerStateType.Waiting || !player.IsPlayable())
                     {
-                        de = player.turnHistories.Last().de;
+                        de = PlayerEngine.Instance.GetTurnHistories(player).Last().de;
                     }
                     else
                     {

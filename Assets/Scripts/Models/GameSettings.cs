@@ -19,6 +19,8 @@ namespace FormuleD.Models
         public DateTime lastTurn;
 
         public GameType type;
+
+        public GameStateType state;
     }
 
     public class PlayerSettings

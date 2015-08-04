@@ -11,6 +11,7 @@ namespace FormuleD.Models.Contexts
     {
         public string id;
         public GameType type;
+        public GameStateType state;
         public DateTime lastTurn;
         public string mapName = "Map1";
         public string mapPreview = @"Assets\Resources\Maps\Image\Map1.png";
@@ -21,10 +22,16 @@ namespace FormuleD.Models.Contexts
         public int totalLap;
     }
 
+    public enum GameStateType
+    {
+        Qualification,
+        Race,
+        Completed
+    }
+
     public enum GameType
     {
         Local,
-        Online,
-        Completed
+        Online
     }
 }

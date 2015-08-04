@@ -13,7 +13,8 @@ namespace FormuleD.Managers.Course.Player
         private PlayerContext _player;
         private SpriteRenderer _spriteRenderer;
 
-        private List<Vector3> _movements;
+        private List<MovementModel> _movements;
+        //private List<Vector3> _movements;
         private Vector3 _nextStep;
         private Vector3? _currentTarget;
         private Vector3? _previousTarget;
@@ -23,7 +24,7 @@ namespace FormuleD.Managers.Course.Player
 
         void Awake()
         {
-            _movements = new List<Vector3>();
+            _movements = new List<MovementModel>();
             _spriteRenderer = this.GetComponent<SpriteRenderer>();
         }
 
@@ -37,10 +38,14 @@ namespace FormuleD.Managers.Course.Player
             this.transform.localRotation = rotation;
         }
 
-        public void AddMovements(IEnumerable<Vector3> movements, Vector3 nextStep)
+        public void AddMovements(IEnumerable<Vector3> movements, Vector3 nextStep, int gear)
         {
-            _movements.AddRange(movements);
-            _nextStep = nextStep;
+            _movements.Add(new MovementModel()
+            {
+                gear = gear,
+                route = movements.ToList(),
+                nextStep = nextStep
+            });
         }
 
         public void ReturnCar(Vector3 previousPosition)
@@ -62,8 +67,9 @@ namespace FormuleD.Managers.Course.Player
             if (!_currentTarget.HasValue && _movements.Any())
             {
                 //_previousTarget = _currentTarget;
-                _currentTarget = _movements.First();
-                var step = _player.currentTurn.gear / 25f;
+                var currentMovement = _movements.First();
+                _currentTarget = currentMovement.route.First();
+                var step = currentMovement.gear / 25f;
                 this.ComputeStepPosition(step, _currentTarget.Value);
                 if (transform.position != _currentTarget.Value)
                 {
@@ -71,8 +77,13 @@ namespace FormuleD.Managers.Course.Player
                     var rotation = new Quaternion(0, 0, 0, 1);
                     rotation.eulerAngles = vectorRotation;
                     this.transform.localRotation = rotation;
-                }                
-                _movements.Remove(_currentTarget.Value);
+                }
+                currentMovement.route.Remove(_currentTarget.Value);
+                if (currentMovement.route.Count == 0)
+                {
+                    _nextStep = currentMovement.nextStep;
+                    _movements.Remove(currentMovement);
+                }
             }
 
             if (_currentTarget.HasValue)
@@ -266,5 +277,12 @@ namespace FormuleD.Managers.Course.Player
                 _nbStep = 0;
             }
         }
+    }
+
+    public class MovementModel
+    {
+        public List<Vector3> route;
+        public int gear;
+        public Vector3 nextStep;
     }
 }
