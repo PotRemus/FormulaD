@@ -13,6 +13,7 @@ namespace FormuleD.Models.Contexts
         public int body;
         public int motor;
         public int handling;
+        public int outOfBend;
 
         public FeatureContext Clone()
         {
@@ -23,6 +24,7 @@ namespace FormuleD.Models.Contexts
             result.body = this.body;
             result.motor = this.motor;
             result.handling = this.handling;
+            result.outOfBend = this.outOfBend;
             return result;
         }
     }

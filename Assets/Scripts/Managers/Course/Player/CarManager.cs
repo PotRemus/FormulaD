@@ -4,12 +4,15 @@ using System.Collections;
 using System.Collections.Generic;
 using FormuleD.Engines;
 using FormuleD.Models.Contexts;
+using FormuleD.Managers.Course.Board;
 
 namespace FormuleD.Managers.Course.Player
 {
     [RequireComponent(typeof(SpriteRenderer))]
     public class CarManager : MonoBehaviour
     {
+        private CaseManager _currentCase;
+
         private PlayerContext _player;
         private SpriteRenderer _spriteRenderer;
 
@@ -38,8 +41,9 @@ namespace FormuleD.Managers.Course.Player
             this.transform.localRotation = rotation;
         }
 
-        public void AddMovements(IEnumerable<Vector3> movements, Vector3 nextStep, int gear)
+        public void AddMovements(IEnumerable<Vector3> movements, Vector3 nextStep, int gear, CaseManager targetCase)
         {
+            _currentCase = targetCase;
             _movements.Add(new MovementModel()
             {
                 gear = gear,
@@ -60,6 +64,16 @@ namespace FormuleD.Managers.Course.Player
         {
             //TODO faire une animation de mort
             _spriteRenderer.color = new Color(0, 0, 0, 1);
+        }
+
+        public void Delete()
+        {
+            if (_currentCase != null)
+            {
+                _currentCase.hasPlayer = false;
+                _currentCase.UpdateBorder();
+                Object.Destroy(this.gameObject);
+            }
         }
 
         void Update()

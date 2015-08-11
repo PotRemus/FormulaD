@@ -66,7 +66,7 @@ namespace FormuleD.Managers.Course.Player
             {
                 foreach (var car in _cars)
                 {
-                    DestroyImmediate(car.Value.gameObject);
+                    car.Value.Delete();
                 }
                 _cars = null;
             }

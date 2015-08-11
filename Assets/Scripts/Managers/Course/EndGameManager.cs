@@ -22,12 +22,13 @@ namespace FormuleD.Managers.Course
 
         private void LoadPlayers(List<PlayerContext> players)
         {
-            playersPanelContent.sizeDelta = new Vector2(460, players.Count * 40);
+            playersPanelContent.sizeDelta = new Vector2(600, players.Count * 50);
             int index = 0;
             foreach (var player in players)
             {
                 var playerTransform = Object.Instantiate(playerPrefab).GetComponent<RectTransform>();
                 playerTransform.SetParent(playersPanelContent);
+                playerTransform.localScale = Vector3.one;
                 _players.Add(playerTransform);
                 var script = playerTransform.GetComponent<EndGamePlayerManager>();
                 script.LoadPlayer(player, index);

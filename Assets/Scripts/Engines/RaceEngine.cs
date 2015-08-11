@@ -38,7 +38,7 @@ namespace FormuleD.Engines
             BoardEngine.Instance.LoadBoard(ContextEngine.Instance.gameContext.mapName);
             if (ContextEngine.Instance.gameContext.state == GameStateType.Qualification)
             {
-                OnViewQualificationPanel();
+                this.OnViewQualificationPanel();
             }
             else if (ContextEngine.Instance.gameContext.state == GameStateType.Completed)
             {
@@ -65,44 +65,58 @@ namespace FormuleD.Engines
             PlayerEngine.Instance.SelectedDe(gear);
             var player = PlayerEngine.Instance.GetCurrent();
             _candidateRoutes = BoardEngine.Instance.FindRoutes(player, min, max);
-            
-            //var currentIndex = player.GetLastIndex();
-            //var currentCase = BoardEngine.Instance.GetCase(currentIndex);
-            //CaseManager lastCase = _candidateRoutes.routes.Last().Value.Last().route.Last();
-            //cameraManager.UpdateZoomPosition(currentCase.transform.position, lastCase.transform.position);
 
             foreach (var routes in _candidateRoutes.routes)
             {
                 var caseCandidate = routes.Value.First().route.Last();
-                if (routes.Value.Any(r => !r.isBadWay))
+                if (ContextEngine.Instance.gameContext.state != GameStateType.Qualification || caseCandidate.standDataSource == null)
                 {
-                    var minCandidate = routes.Value.Where(r => !r.isBadWay).Min(r => r.route.Count) - 1;
-                    var maxCandidate = routes.Value.Where(r => !r.isBadWay).Max(r => r.route.Count) - 1;
-                    caseCandidate.UpdateContent(gear, minCandidate, maxCandidate, routes.Value.Any(r => r.nbOutOfBend > 0), false);
-                }
-                else
-                {
-                    var minCandidate = max;
-                    var maxCandidate = min;
-                    var hasRouteCandidate = false;
-                    foreach (var route in routes.Value)
+                    if (routes.Value.Any(r => !r.isBadWay))
                     {
-                        if (!_candidateRoutes.routes.Any(cr => cr.Value.Any(r => !r.isBadWay && r.route.Count == route.route.Count)))
+                        var minCandidate = routes.Value.Where(r => !r.isBadWay).Min(r => r.route.Count) - 1;
+                        var maxCandidate = routes.Value.Where(r => !r.isBadWay).Max(r => r.route.Count) - 1;
+                        if (minCandidate < min)
                         {
-                            if (route.route.Count < minCandidate)
-                            {
-                                minCandidate = route.route.Count;
-                            }
-                            if (route.route.Count > maxCandidate)
-                            {
-                                maxCandidate = route.route.Count;
-                            }
-                            hasRouteCandidate = true;
+                            minCandidate = min;
                         }
+                        if (maxCandidate > max)
+                        {
+                            maxCandidate = max;
+                        }
+                        caseCandidate.UpdateContent(gear, minCandidate, maxCandidate, routes.Value.Any(r => r.nbOutOfBend > 0), false);
                     }
-                    if (hasRouteCandidate)
+                    else
                     {
-                        caseCandidate.UpdateContent(gear, minCandidate, maxCandidate, routes.Value.Any(r => r.nbOutOfBend > 0), true);
+                        var minCandidate = max;
+                        var maxCandidate = min;
+                        var hasRouteCandidate = false;
+                        foreach (var route in routes.Value)
+                        {
+                            if (!_candidateRoutes.routes.Any(cr => cr.Value.Any(r => !r.isBadWay && r.route.Count == route.route.Count)))
+                            {
+                                if (route.route.Count < minCandidate)
+                                {
+                                    minCandidate = route.route.Count;
+                                }
+                                if (route.route.Count > maxCandidate)
+                                {
+                                    maxCandidate = route.route.Count;
+                                }
+                                hasRouteCandidate = true;
+                            }
+                        }
+                        if (hasRouteCandidate)
+                        {
+                            if (minCandidate < min)
+                            {
+                                minCandidate = min;
+                            }
+                            if (maxCandidate > max)
+                            {
+                                maxCandidate = max;
+                            }
+                            caseCandidate.UpdateContent(gear, minCandidate, maxCandidate, routes.Value.Any(r => r.nbOutOfBend > 0), true);
+                        }
                     }
                 }
             }
@@ -137,36 +151,41 @@ namespace FormuleD.Engines
             }
             else
             {
+                PlayerEngine.Instance.UpdateGear(gear, deValue);
+
                 int minValue;
                 int maxValue;
-                PlayerEngine.Instance.UpdateGear(gear, deValue, out minValue, out maxValue);
+                FeatureEngine.Instance.ComputeMinMaxUseBrake(player, deValue, out minValue, out maxValue);
                 _candidateRoutes = BoardEngine.Instance.FindRoutes(player, minValue - 1, maxValue);
 
-                var playerStandCase = _candidateRoutes.routes.Select(r => r.Value.First().route.Last()).Where(r => r.standDataSource != null && r.standDataSource.playerIndex.HasValue).FirstOrDefault();
-                if (playerStandCase != null)
+                if (ContextEngine.Instance.gameContext.state == GameStateType.Race)
                 {
-                    var standWay = _candidateRoutes.routes[playerStandCase.itemDataSource.index]
-                        .OrderBy(r => r.nbLineMove)
-                        .ThenBy(r => r.route.Skip(1).Count(c => c.isDangerous))
-                        .FirstOrDefault();
-                    if (standWay != null && standWay.route.Count > 1)
+                    var playerStandCase = _candidateRoutes.routes.Select(r => r.Value.First().route.Last()).Where(r => r.standDataSource != null && r.standDataSource.playerIndex.HasValue).FirstOrDefault();
+                    if (playerStandCase != null)
                     {
-                        var caseCandidate = standWay.route.Last();
-                        caseCandidate.UpdateContent(gear, standWay.route.Count - 1, standWay.route.Count - 1, standWay.route.Any(r => r.isDangerous), false);
-                        caseCandidate.isCandidate = true;
+                        var standWay = _candidateRoutes.routes[playerStandCase.itemDataSource.index]
+                            .OrderBy(r => r.nbLineMove)
+                            .ThenBy(r => r.route.Skip(1).Count(c => c.isDangerous))
+                            .FirstOrDefault();
+                        if (standWay != null && standWay.route.Count > 1)
+                        {
+                            var caseCandidate = standWay.route.Last();
+                            caseCandidate.UpdateContent(gear, standWay.route.Count - 1, standWay.route.Count - 1, standWay.route.Any(r => r.isDangerous), false);
+                            caseCandidate.isCandidate = true;
+                        }
                     }
-                }
-                else
-                {
-                    var standWay = _candidateRoutes.routes.SelectMany(r => r.Value.Where(c => c.isStandWay).Select(c => c.route))
-                        .OrderByDescending(r => r.Last().itemDataSource.order)
-                        .ThenBy(r => r.Skip(1).Count(c => c.isDangerous))
-                        .FirstOrDefault();
-                    if (standWay != null && standWay.Count > 1)
+                    else
                     {
-                        var caseCandidate = standWay.Last();
-                        caseCandidate.UpdateContent(gear, standWay.Count - 1, standWay.Count - 1, standWay.Any(r => r.isDangerous), false);
-                        caseCandidate.isCandidate = true;
+                        var standWay = _candidateRoutes.routes.SelectMany(r => r.Value.Where(c => c.isStandWay).Select(c => c.route))
+                            .OrderByDescending(r => r.Last().itemDataSource.order)
+                            .ThenBy(r => r.Skip(1).Count(c => c.isDangerous))
+                            .FirstOrDefault();
+                        if (standWay != null && standWay.Count > 1)
+                        {
+                            var caseCandidate = standWay.Last();
+                            caseCandidate.UpdateContent(gear, standWay.Count - 1, standWay.Count - 1, standWay.Any(r => r.isDangerous), false);
+                            caseCandidate.isCandidate = true;
+                        }
                     }
                 }
 
@@ -230,12 +249,9 @@ namespace FormuleD.Engines
             {
                 PlayerEngine.Instance.LoadAspirationView();
                 var player = PlayerEngine.Instance.GetCurrent();
-                var min = 3 - player.features.brake;
-                if (min < 1)
-                {
-                    min = 1;
-                }
-                var max = 3;
+                int min;
+                int max;
+                FeatureEngine.Instance.ComputeMinMaxUseBrake(player, 3, out min, out max);
                 _candidateRoutes = BoardEngine.Instance.FindRoutes(player, min, max);
                 if (_candidateRoutes.routes.Count > 0)
                 {
@@ -310,10 +326,9 @@ namespace FormuleD.Engines
         {
             if (!isHoverGUI && _candidateRoutes != null)
             {
+                var player = PlayerEngine.Instance.GetCurrent();
                 if (enable)
                 {
-                    var player = PlayerEngine.Instance.GetCurrent();
-                    var features = player.features;
                     var de = player.currentTurn.de;
 
                     if (_candidateRoutes.routes.ContainsKey(target.itemDataSource.index))
@@ -324,18 +339,7 @@ namespace FormuleD.Engines
                             .ThenByDescending(r => r.route.Count - de)
                             .ThenBy(r => r.route.Skip(1).Count(c => c.isDangerous)).First();
 
-                        if (_candidateRoute.nbOutOfBend > 0)
-                        {
-                            features = PlayerEngine.Instance.ComputeOutOfBend(features, _candidateRoute.nbOutOfBend);
-                        }
-
-                        if (!_candidateRoute.isStandWay)
-                        {
-                            var nbCase = _candidateRoute.route.Count - 1;
-                            features = PlayerEngine.Instance.ComputeUseBrake(features, player.state, nbCase);
-                            PlayerEngine.Instance.DisplayWarningFeature(features);
-                        }
-
+                        FeatureEngine.Instance.WarningRoute(player, _candidateRoute);
                         BoardEngine.Instance.DrawRoute(_candidateRoute.route, player.GetColor());
                     }
                 }
@@ -343,7 +347,7 @@ namespace FormuleD.Engines
                 {
                     if (_candidateRoute != null)
                     {
-                        PlayerEngine.Instance.ResetPlayerState();
+                        FeatureEngine.Instance.DisplayFeature(player);
                         BoardEngine.Instance.DrawRoute(_candidateRoute.route);
                     }
                 }
@@ -371,8 +375,6 @@ namespace FormuleD.Engines
 
         public void OnFinishMouvement()
         {
-            //TODO Accrochage
-            //TODO Fin de course
             var player = PlayerEngine.Instance.GetCurrent();
             if (player.state == PlayerStateType.Aspiration)
             {
@@ -408,30 +410,32 @@ namespace FormuleD.Engines
 
         public void OnClash(PlayerContext player)
         {
-            var target = BoardEngine.Instance.GetCase(PlayerEngine.Instance.GetCurrentIndex(player));
-            List<CaseManager> candidates = BoardEngine.Instance.GetClashCandidate(target);
-            if (candidates.Any())
+            if (ContextEngine.Instance.gameContext.state == GameStateType.Race)
             {
-                foreach (var candidate in candidates)
+                var target = BoardEngine.Instance.GetCase(PlayerEngine.Instance.GetCurrentIndex(player));
+                List<CaseManager> candidates = BoardEngine.Instance.GetClashCandidate(target);
+                if (candidates.Any())
                 {
-                    var playerTarget = PlayerEngine.Instance.FindPlayer(candidate.itemDataSource.index);
-                    var targetDe = this.BlackDice();
-                    var currentDe = this.BlackDice();
-                    //TODO faire une animation pour le choque
-                    if (targetDe == 1)
+                    foreach (var candidate in candidates)
                     {
-                        playerTarget.features.handling = playerTarget.features.handling - 1;
-                        this.AddDangerousCase(candidate);
-                        PlayerEngine.Instance.CheckIsDead(playerTarget);
-                        if (playerTarget.state == PlayerStateType.Dead)
+                        var playerTarget = PlayerEngine.Instance.FindPlayer(candidate.itemDataSource.index);
+                        //TODO faire une animation pour le choque
+                        if (FeatureEngine.Instance.ApplyClash(playerTarget))
                         {
-                            PlayerEngine.Instance.PlayerDead(playerTarget);
+                            PlayerEngine.Instance.CheckIsDead(playerTarget);
+                            if (playerTarget.state == PlayerStateType.Dead)
+                            {
+                                PlayerEngine.Instance.PlayerDead(playerTarget);
+                            }
+                            else
+                            {
+                                this.AddDangerousCase(candidate);
+                            }
                         }
-                    }
-                    if (currentDe == 1)
-                    {
-                        player.features.handling = player.features.handling - 1;
-                        this.AddDangerousCase(target);
+                        if (FeatureEngine.Instance.ApplyClash(player))
+                        {
+                            this.AddDangerousCase(target);
+                        }
                     }
                 }
             }
@@ -439,27 +443,28 @@ namespace FormuleD.Engines
 
         public void OnBrokenEngine(PlayerContext player)
         {
-            var gear = player.currentTurn.gear;
-            if (gear >= 5)
+            if (ContextEngine.Instance.gameContext.state == GameStateType.Race)
             {
-                var de = player.currentTurn.de;
-                if ((gear == 5 && de == 20) || (gear == 6 && de == 30))
+                var gear = player.currentTurn.gear;
+                if (gear >= 5)
                 {
-                    foreach (var candidate in PlayerEngine.Instance.FindBrokenCandidate())
+                    var de = player.currentTurn.de;
+                    if ((gear == 5 && de == 20) || (gear == 6 && de == 30))
                     {
-                        var blackDe = this.BlackDice();
-                        if (blackDe <= 4)
+                        foreach (var candidate in PlayerEngine.Instance.FindBrokenCandidate())
                         {
-                            //TODO faire une animation pour la case moteur
-                            candidate.features.motor = candidate.features.motor - 1;
-                            var target = BoardEngine.Instance.GetCase(PlayerEngine.Instance.GetCurrentIndex(candidate));
-                            this.AddDangerousCase(target);
-                            if (player.name != candidate.name)
+                            if (FeatureEngine.Instance.ApplyBrokenEngine(candidate))
                             {
-                                PlayerEngine.Instance.CheckIsDead(candidate);
-                                if (candidate.state == PlayerStateType.Dead)
+                                //TODO faire une animation pour la case moteur
+                                var target = BoardEngine.Instance.GetCase(PlayerEngine.Instance.GetCurrentIndex(candidate));
+                                this.AddDangerousCase(target);
+                                if (player.name != candidate.name)
                                 {
-                                    PlayerEngine.Instance.PlayerDead(candidate);
+                                    PlayerEngine.Instance.CheckIsDead(candidate);
+                                    if (candidate.state == PlayerStateType.Dead)
+                                    {
+                                        PlayerEngine.Instance.PlayerDead(candidate);
+                                    }
                                 }
                             }
                         }
@@ -516,10 +521,21 @@ namespace FormuleD.Engines
         {
             var players = ContextEngine.Instance.gameContext.players;
             var orderedPlayer = new List<PlayerContext>();
-            orderedPlayer.AddRange(players.Where(p => p.qualification != null && p.qualification.state == QualificationStateType.Completed).OrderBy(p => p.qualification.total));
-            orderedPlayer.AddRange(players.Where(p => p.qualification == null || p.qualification.state != QualificationStateType.Completed).OrderBy(p => p.index));
+            orderedPlayer.AddRange(players.Where(p => p.qualification != null && p.qualification.state == QualificationStateType.Completed).OrderBy(p => p.qualification.total).ThenBy(p => p.qualification.turnHistories.Count).ThenBy(p => p.qualification.endDate - p.qualification.startDate));
+            if (orderedPlayer.Count == players.Count)
+            {
+                ContextEngine.Instance.gameContext.players = orderedPlayer;
+                ContextEngine.Instance.gameContext.state = GameStateType.Race;
+                ContextEngine.Instance.gameContext.turn = 0;
+                PlayerEngine.Instance.LoadPlayers(ContextEngine.Instance.gameContext.players);
+            }
+            else
+            {
+                orderedPlayer.AddRange(players.Where(p => p.qualification == null || p.qualification.state != QualificationStateType.Completed).OrderBy(p => p.index));
+            }
             ContextEngine.Instance.gameContext.players = orderedPlayer;
             qualificationManager.gameObject.SetActive(true);
+            isHoverGUI = true;
             qualificationManager.OnOpen(ContextEngine.Instance.gameContext.players);
         }
 
@@ -527,6 +543,7 @@ namespace FormuleD.Engines
         {
             PlayerEngine.Instance.LoadPlayers(new List<PlayerContext>() { player });
             qualificationManager.gameObject.SetActive(false);
+            isHoverGUI = false;
         }
     }
 }

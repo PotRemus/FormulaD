@@ -55,8 +55,8 @@ namespace FormuleD.Models.Contexts
                 case PlayerColor.green:
                     result = Config.PlayerColor.green;
                     break;
-                case PlayerColor.orange:
-                    result = Config.PlayerColor.orange;
+                case PlayerColor.gray:
+                    result = Config.PlayerColor.gray;
                     break;
                 case PlayerColor.purple:
                     result = Config.PlayerColor.purple;
@@ -71,7 +71,8 @@ namespace FormuleD.Models.Contexts
         yellow,
         green,
         purple,
-        orange
+        gray
+        //orange
     }
 
     public enum PlayerStateType

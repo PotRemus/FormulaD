@@ -70,6 +70,7 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Engines\BoardEngine.cs" />
     <Compile Include="Assets\Scripts\Engines\ContextEngine.cs" />
+    <Compile Include="Assets\Scripts\Engines\FeatureEngine.cs" />
     <Compile Include="Assets\Scripts\Engines\PlayerEngine.cs" />
     <Compile Include="Assets\Scripts\Engines\RaceEngine.cs" />
     <Compile Include="Assets\Scripts\Engines\ResourceEngine.cs" />

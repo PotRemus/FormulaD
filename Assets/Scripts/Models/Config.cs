@@ -17,7 +17,8 @@ namespace FormuleD.Models
             public static Color yellow = new Color(241f / 255f, 196f / 255f, 15f / 255f, 1f);
             public static Color green = new Color(46f / 255f, 204f / 255f, 113f / 255f, 1f);
             public static Color purple = new Color(155f / 255f, 89f / 255f, 182f / 255f, 1f);
-            public static Color orange = new Color(221f / 255f, 84f / 255f, 0f, 1f);
+            //public static Color orange = new Color(221f / 255f, 84f / 255f, 0f, 1f);
+            public static Color gray = new Color(153f / 255f, 153f / 255f, 153f / 255f, 1f);
         }
 
         public static class TrophyColor

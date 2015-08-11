@@ -24,13 +24,13 @@ namespace FormuleD.Managers.Launcher
         {
             var candidates = SettingsEngine.Instance.CandidateGames();
             onlinePanelManager.LoadGames(
-                candidates.Where(c => c.type == GameType.Online && c.players.Any(p => p.isCurrent && p.id == currentPlayerName)).ToList(),
-                candidates.Where(c => c.type == GameType.Online && !c.players.Any(p => p.isCurrent && p.id == currentPlayerName)).ToList(), 
+                candidates.Where(c => c.state != GameStateType.Completed && c.type == GameType.Online && c.players.Any(p => p.isCurrent && p.id == currentPlayerName)).ToList(),
+                candidates.Where(c => c.state != GameStateType.Completed && c.type == GameType.Online && !c.players.Any(p => p.isCurrent && p.id == currentPlayerName)).ToList(), 
                 gamePreviewPrefab);
             var rectOnlinePanel = onlinePanelManager.GetComponent<RectTransform>();
 
             float localOffset = rectOnlinePanel.sizeDelta.y + newContainer[0].sizeDelta.y;
-            localPanelManagers.LoadGames(candidates.Where(c => c.type == GameType.Local).ToList(), gamePreviewPrefab, localOffset);
+            localPanelManagers.LoadGames(candidates.Where(c => c.state != GameStateType.Completed && c.type == GameType.Local).ToList(), gamePreviewPrefab, localOffset);
             var rectLocalPanel = localPanelManagers.GetComponent<RectTransform>();
             
             var completedOffset = localOffset + rectLocalPanel.sizeDelta.y;

@@ -7,6 +7,7 @@ namespace FormuleD.Managers.Course.Player
 {
     public class FeaturePanelManager : MonoBehaviour
     {
+        public RectTransform panelRaceFeature;
         public Text noteTire;
         public Text noteBrake;
         public Text noteGearbox;
@@ -15,79 +16,101 @@ namespace FormuleD.Managers.Course.Player
         public Text noteHandling;
         public Text noteBend;
 
+        public RectTransform panelQualificationFeature;
+        public Text notePenalty;
+        public Text noteQualificationBend;
+
         void Awake()
         {
         }
 
-        public void UpdateFeature(FeatureContext state, int bendStop, int maxBendStop)
+        public void UpdateFeature(GameStateType state, FeatureContext feature, int bendStop, int maxBendStop)
         {
-            noteTire.text = state.tire.ToString();
-            noteTire.color = Color.black;
-
-            noteBrake.text = state.brake.ToString();
-            noteBrake.color = Color.black;
-
-            noteGearbox.text = state.gearbox.ToString();
-            noteGearbox.color = Color.black;
-
-            noteBody.text = state.body.ToString();
-            noteBody.color = Color.black;
-
-            noteMotor.text = state.motor.ToString();
-            noteMotor.color = Color.black;
-
-            noteHandling.text = state.handling.ToString();
-            noteHandling.color = Color.black;
-
             var currentBendStop = bendStop;
-            if(bendStop > maxBendStop){
+            if (bendStop > maxBendStop)
+            {
                 currentBendStop = maxBendStop;
             }
-            noteBend.text = string.Format("{0}/{1}", currentBendStop, maxBendStop);
+
+            if (state == GameStateType.Race)
+            {
+                panelRaceFeature.gameObject.SetActive(true);
+                panelQualificationFeature.gameObject.SetActive(false);
+                noteTire.text = feature.tire.ToString();
+                noteTire.color = Color.black;
+
+                noteBrake.text = feature.brake.ToString();
+                noteBrake.color = Color.black;
+
+                noteGearbox.text = feature.gearbox.ToString();
+                noteGearbox.color = Color.black;
+
+                noteBody.text = feature.body.ToString();
+                noteBody.color = Color.black;
+
+                noteMotor.text = feature.motor.ToString();
+                noteMotor.color = Color.black;
+
+                noteHandling.text = feature.handling.ToString();
+                noteHandling.color = Color.black;
+
+                noteBend.text = string.Format("{0}/{1}", currentBendStop, maxBendStop);
+            }
+            else if (state == GameStateType.Qualification)
+            {
+                panelRaceFeature.gameObject.SetActive(false);
+                panelQualificationFeature.gameObject.SetActive(true);
+
+                notePenalty.text = feature.outOfBend.ToString();
+                notePenalty.color = Color.black;
+
+                noteQualificationBend.text = string.Format("{0}/{1}", currentBendStop, maxBendStop);
+            }
         }
 
-        public void WarningFeature(FeatureContext source, FeatureContext target)
+        public void WarningFeature(GameStateType state, FeatureContext source, FeatureContext target)
         {
-            if (source.tire != target.tire)
+            if (state == GameStateType.Race)
             {
-                noteTire.text = string.Format("{0} > {1}", source.tire, target.tire);
-                noteTire.color = Color.red;
+                if (source.tire != target.tire)
+                {
+                    noteTire.text = target.tire.ToString();
+                    noteTire.color = Color.red;
+                }
+                if (source.brake != target.brake)
+                {
+                    noteBrake.text = target.brake.ToString();
+                    noteBrake.color = Color.red;
+                }
+                if (source.gearbox != target.gearbox)
+                {
+                    noteGearbox.text = target.gearbox.ToString();
+                    noteGearbox.color = Color.red;
+                }
+                if (source.body != target.body)
+                {
+                    noteBody.text = target.body.ToString();
+                    noteBody.color = Color.red;
+                }
+                if (source.motor != target.motor)
+                {
+                    noteMotor.text = target.motor.ToString();
+                    noteMotor.color = Color.red;
+                }
+                if (source.handling != target.handling)
+                {
+                    noteHandling.text = target.handling.ToString();
+                    noteHandling.color = Color.red;
+                }
             }
-            if (source.brake != target.brake)
+            else if (state == GameStateType.Qualification)
             {
-                noteBrake.text = string.Format("{0} > {1}", source.brake, target.brake);
-                noteBrake.color = Color.red;
-            }
-            if (source.gearbox != target.gearbox)
-            {
-                noteGearbox.text = string.Format("{0} > {1}", source.gearbox, target.gearbox);
-                noteGearbox.color = Color.red;
-            }
-            if (source.body != target.body)
-            {
-                noteBody.text = string.Format("{0} > {1}", source.body, target.body);
-                noteBody.color = Color.red;
-            }
-            if (source.motor != target.motor)
-            {
-                noteMotor.text = string.Format("{0} > {1}", source.motor, target.motor);
-                noteMotor.color = Color.red;
-            }
-            if (source.handling != target.handling)
-            {
-                noteHandling.text = string.Format("{0} > {1}", source.handling, target.handling);
-                noteHandling.color = Color.red;
+                if (source.outOfBend != target.outOfBend)
+                {
+                    notePenalty.text = target.outOfBend.ToString();
+                    notePenalty.color = Color.red;
+                }
             }
         }
-    }
-
-    public enum StateType
-    {
-        tire,
-        brake,
-        gearbox,
-        body,
-        motor,
-        handling
     }
 }

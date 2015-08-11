@@ -20,7 +20,7 @@ namespace FormuleD.Engines
 
         public DePanelManager dePanelManager;
         public PlayerPanelManager playerPanelManager;
-        public FeaturePanelManager featurePanelManager;
+        
 
         public CameraManager cameraManager;
 
@@ -31,7 +31,7 @@ namespace FormuleD.Engines
         {
             if (Instance != null)
             {
-                Debug.LogError("Multiple instances of GameEngine!");
+                Debug.LogError("Multiple instances of PlayerEngine!");
             }
             Instance = this;
         }
@@ -58,6 +58,7 @@ namespace FormuleD.Engines
                         history.paths = new List<List<IndexDataSource>>() { new List<IndexDataSource>() { startCase.itemDataSource.index } };
                         player.qualification.turnHistories.Add(history);
                         player.qualification.startDate = DateTime.UtcNow;
+                        player.qualification.state = QualificationStateType.Playing;
                     }
                 }
                 else
@@ -133,7 +134,7 @@ namespace FormuleD.Engines
 
             _previousViewPlayer = playerContext;
             playerPanelManager.SelectedPlayer(playerContext);
-            this.UpdateFeature(playerContext);
+            FeatureEngine.Instance.DisplayFeature(playerContext);
             dePanelManager.UpdateDe(playerContext);
             if (playerContext.state == PlayerStateType.RollDice)
             {
@@ -171,9 +172,7 @@ namespace FormuleD.Engines
 
         public void SelectedDe(int gear)
         {
-            this.UpdateFeature(_currentPlayer);
-            var features = this.ComputeDemotion(gear);
-            featurePanelManager.WarningFeature(_currentPlayer.features, features);
+            FeatureEngine.Instance.WarningDemotion(_currentPlayer, gear);
             dePanelManager.UpdateSelectedDe(gear);
         }
 
@@ -182,35 +181,11 @@ namespace FormuleD.Engines
             dePanelManager.UpdateDe(_currentPlayer);
         }
 
-        private FeatureContext ComputeDemotion(int targetGear)
-        {
-            FeatureContext result = _currentPlayer.features.Clone();
-            var previousGear = this.GetTurnHistories(_currentPlayer).Last().gear;
-            var gearDif = previousGear - targetGear;
-            if (gearDif >= 4)
-            {
-                result.gearbox = _currentPlayer.features.gearbox - 1;
-                result.brake = _currentPlayer.features.brake - 1;
-                result.motor = _currentPlayer.features.motor - 1;
-            }
-            else if (gearDif == 3)
-            {
-                result.gearbox = _currentPlayer.features.gearbox - 1;
-                result.brake = _currentPlayer.features.brake - 1;
-            }
-            else if (gearDif == 2)
-            {
-                result.gearbox = _currentPlayer.features.gearbox - 1;
-            }
-            return result;
-        }
-
-        public void UpdateGear(int gear, int deValue, out int minValue, out int maxValue)
+        public void UpdateGear(int gear, int deValue)
         {
             if (_currentPlayer != null && _currentPlayer.state == PlayerStateType.RollDice)
             {
-                _currentPlayer.features = this.ComputeDemotion(gear);
-                this.UpdateFeature(_currentPlayer);
+                FeatureEngine.Instance.ApplyDemotion(_currentPlayer, gear);
                 _currentPlayer.currentTurn.gear = gear;
                 _currentPlayer.currentTurn.de = deValue;
                 _currentPlayer.state = PlayerStateType.ChoseRoute;
@@ -218,113 +193,6 @@ namespace FormuleD.Engines
 
                 this.SelectedPlayerView(_currentPlayer);
             }
-
-            if (_currentPlayer.state == PlayerStateType.ChoseRoute)
-            {
-                if (_currentPlayer.features.brake >= 3)
-                {
-                    if (_currentPlayer.features.tire >= 3)
-                    {
-                        minValue = deValue - 6;
-                    }
-                    else if (_currentPlayer.features.tire == 2)
-                    {
-                        minValue = deValue - 5;
-                    }
-                    else if (_currentPlayer.features.tire == 1)
-                    {
-                        minValue = deValue - 4;
-                    }
-                    else
-                    {
-                        minValue = deValue - 3;
-                    }
-                }
-                else if (_currentPlayer.features.brake == 2)
-                {
-                    minValue = deValue - 2;
-                }
-                else if (_currentPlayer.features.brake == 1)
-                {
-                    minValue = deValue - 1;
-                }
-                else
-                {
-                    minValue = deValue;
-                }
-                if (minValue < 1)
-                {
-                    minValue = 1;
-                }
-                maxValue = deValue;
-            }
-            else
-            {
-                minValue = deValue;
-                maxValue = deValue;
-            }
-        }
-
-        public FeatureContext ComputeUseBrake(FeatureContext features, PlayerStateType state, int nbCase)
-        {
-            FeatureContext result = features.Clone();
-            int difDe = 0;
-            if (state == PlayerStateType.Aspiration)
-            {
-                difDe = 3 - nbCase;
-            }
-            else if (state == PlayerStateType.StandOut)
-            {
-                difDe = 0;
-            }
-            else
-            {
-                difDe = _currentPlayer.currentTurn.de - nbCase;
-            }
-            if (difDe >= 6)
-            {
-                result.brake = features.brake - 3;
-                result.tire = _currentPlayer.features.tire - 3;
-            }
-            else if (difDe == 5)
-            {
-                result.brake = features.brake - 3;
-                result.tire = features.tire - 2;
-            }
-            else if (difDe == 4)
-            {
-                result.brake = features.brake - 3;
-                result.tire = features.tire - 1;
-            }
-            else if (difDe == 3)
-            {
-                result.brake = features.brake - 3;
-            }
-            else if (difDe == 2)
-            {
-                result.brake = features.brake - 2;
-            }
-            else if (difDe == 1)
-            {
-                result.brake = features.brake - 1;
-            }
-            return result;
-        }
-
-        public FeatureContext ComputeOutOfBend(FeatureContext features, int nbOut)
-        {
-            FeatureContext result = features.Clone();
-            result.tire = features.tire - nbOut;
-            if (result.tire < 0)
-            {
-                result.tire = 0;
-            }
-            return result;
-        }
-
-        public void DisplayWarningFeature(FeatureContext features)
-        {
-            featurePanelManager.WarningFeature(_currentPlayer.features, features);
         }
 
         public void SelectedRoute(RouteResult candidate)
@@ -335,12 +203,7 @@ namespace FormuleD.Engines
             {
                 standData = endCase.standDataSource;
             }
-
-            if (standData == null)
-            {
-                _currentPlayer.features = this.ComputeUseBrake(_currentPlayer.features, _currentPlayer.state, candidate.route.Count - 1);
-                _currentPlayer.features = this.ComputeOutOfBend(_currentPlayer.features, candidate.nbOutOfBend);
-            }
+            FeatureEngine.Instance.ApplyRoute(_currentPlayer, candidate);
 
             bool hasNewLap = BoardEngine.Instance.ContainsFinishCase(candidate.route.Select(r => r.itemDataSource.index));
             if (hasNewLap)
@@ -374,14 +237,7 @@ namespace FormuleD.Engines
                 _currentPlayer.stopBend = 0;
             }
 
-            foreach (var current in candidate.route.Where(c => c.isDangerous))
-            {
-                var de = RaceEngine.Instance.BlackDice();
-                if (de <= 4)
-                {
-                    _currentPlayer.features.handling = _currentPlayer.features.handling - 1;
-                }
-            }
+            FeatureEngine.Instance.ApplyDangerousRoute(_currentPlayer, candidate);
 
             if (_currentPlayer.state == PlayerStateType.ChoseRoute)
             {
@@ -431,6 +287,12 @@ namespace FormuleD.Engines
                 {
                     if (_currentPlayer.lap > 0)
                     {
+                        var previousHistory = turnHistories.Last();
+                        if (previousHistory.paths.Any())
+                        {
+                            BoardEngine.Instance.CleanRoute(previousHistory.paths.SelectMany(p => p.Select(i => BoardEngine.Instance.GetCase(i))).ToList(), _currentPlayer.GetColor());
+                        }
+
                         _currentPlayer.qualification.endDate = DateTime.UtcNow;
                         int nbDe = _currentPlayer.qualification.turnHistories.Count - 1;
                         var duration = _currentPlayer.qualification.endDate - _currentPlayer.qualification.startDate;
@@ -460,13 +322,7 @@ namespace FormuleD.Engines
 
         public void CheckIsDead(PlayerContext player)
         {
-            bool isDead = false;
-            if (player.features.tire < 0 || player.features.brake < 0 || player.features.body == 0 || player.features.motor == 0 || player.features.handling == 0)
-            {
-                isDead = true;
-            }
-
-            if (isDead)
+            if (FeatureEngine.Instance.CheckIsDead(player))
             {
                 player.state = PlayerStateType.Dead;
             }
@@ -524,7 +380,7 @@ namespace FormuleD.Engines
 
                     var nextPosition = new Vector3(nextCase.transform.position.x, nextCase.transform.position.y, carManager.transform.position.z);
                     var movements = route.Select(d => new Vector3(d.transform.position.x, d.transform.position.y, carManager.transform.position.z));
-                    carManager.AddMovements(movements, nextPosition, _currentPlayer.currentTurn.gear);
+                    carManager.AddMovements(movements, nextPosition, _currentPlayer.currentTurn.gear, lastCase);
                 }
             }
         }
@@ -534,17 +390,12 @@ namespace FormuleD.Engines
             return _currentPlayer;
         }
 
-        public void ResetPlayerState()
-        {
-            this.UpdateFeature(_currentPlayer);
-        }
-
         public void NextPlayer()
         {
             PlayerContext nextPlayer = null;
             if (_currentPlayer != null)
             {
-                var history = _currentPlayer.currentTurn;
+                var history = this.GetTurnHistories(_currentPlayer).Last();
                 var fullPath = history.paths.SelectMany(p => p.Select(i => i)).ToList();
                 if (history.outOfBend > 0 && _currentPlayer.features.tire == 0 && fullPath.Count > 1)
                 {
@@ -599,7 +450,7 @@ namespace FormuleD.Engines
                 .ThenByDescending(p => p.lap)
                 .ThenByDescending(p => BoardEngine.Instance.GetCase(this.GetCurrentIndex(p)).itemDataSource.order)
                 .ThenByDescending(p => this.GetTurnHistories(p).Last().gear)
-                .ThenBy(p => BoardEngine.Instance.IsBestColumnTurn(this.GetCurrentIndex(p)));
+                .ThenByDescending(p => BoardEngine.Instance.IsBestColumnTurn(this.GetCurrentIndex(p)));
             return result.ToList();
         }
 
@@ -623,21 +474,21 @@ namespace FormuleD.Engines
             return result;
         }
 
-        private void UpdateFeature(PlayerContext player)
-        {
-            var currentCase = BoardEngine.Instance.GetCase(this.GetCurrentIndex(player));
-            var currentStop = 0;
-            var maxStop = 0;
-            if (currentCase.bendDataSource != null)
-            {
-                maxStop = currentCase.bendDataSource.stop;
-                if (currentCase.bendDataSource.name == player.lastBend)
-                {
-                    currentStop = player.stopBend;
-                }
-            }
-            featurePanelManager.UpdateFeature(player.features, currentStop, maxStop);
-        }
+        //private void UpdateFeature(PlayerContext player)
+        //{
+        //    var currentCase = BoardEngine.Instance.GetCase(this.GetCurrentIndex(player));
+        //    var currentStop = 0;
+        //    var maxStop = 0;
+        //    if (currentCase.bendDataSource != null)
+        //    {
+        //        maxStop = currentCase.bendDataSource.stop;
+        //        if (currentCase.bendDataSource.name == player.lastBend)
+        //        {
+        //            currentStop = player.stopBend;
+        //        }
+        //    }
+        //    featurePanelManager.UpdateFeature(player.features, currentStop, maxStop);
+        //}
 
         private bool CheckAspiration(List<CaseManager> route)
         {

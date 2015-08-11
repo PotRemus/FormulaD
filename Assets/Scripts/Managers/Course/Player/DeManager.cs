@@ -54,7 +54,7 @@ namespace FormuleD.Managers.Course.Player
                     _textDe.text = string.Format("{0}-{1}", min, max);
                 }
                 var gearDif = playerGear - gear;
-                if (gearDif >= 2 && isPlayerRollDice)
+                if (ContextEngine.Instance.gameContext.state == GameStateType.Race && gearDif >= 2 && isPlayerRollDice)
                 {
                     if (gear == 3)
                     {

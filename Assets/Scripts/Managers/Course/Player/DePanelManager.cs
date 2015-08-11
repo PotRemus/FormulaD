@@ -38,30 +38,12 @@ namespace FormuleD.Managers.Course.Player
 
         private void LoadDeChoise(PlayerContext player)
         {
+            int min;
+            int max;
+            FeatureEngine.Instance.ComputeMinMaxGearbox(player, out min, out max);
             var gear = PlayerEngine.Instance.GetTurnHistories(player).Last().gear;
-            var indexMin = gear - 1 - 1;
-            if (player.features.gearbox > 0 && player.features.brake > 0 && player.features.motor > 0)
-            {
-                indexMin -= 3;
-            }
-            else if (player.features.gearbox > 0 && player.features.brake > 0)
-            {
-                indexMin -= 2;
-            }
-            else if (player.features.gearbox > 0)
-            {
-                indexMin -= 1;
-            }
-            if (indexMin < 0)
-            {
-                indexMin = 0;
-            }
-
-            var indexMax = (gear + 1 - 1);
-            if (indexMax > 5)
-            {
-                indexMax = 5;
-            }
+            var indexMin = min - 1;
+            var indexMax = max - 1;
 
             DeManager selectedDe = null;
             var currentGear = gear != 0 ? gear : 1;
